@@ -3,7 +3,9 @@
 
 namespace learned_sort {
 
-    void sort();
-};
+    void sort(){
+        return;
+    };
+}
 
 #endif
