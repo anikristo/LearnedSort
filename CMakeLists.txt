@@ -12,7 +12,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Dependencies
 include_directories(${PROJECT_SOURCE_DIR}/external/ips4o)
 add_subdirectory(external/googletest)
-add_subdirectory(external/benchmark)
+add_subdirectory(external/googlebenchmark)
 
 # Learned Sort library
 include_directories(${PROJECT_SOURCE_DIR}/lib)
