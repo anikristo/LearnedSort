@@ -1,12 +1,9 @@
-[submodule "googletest"]
-	path = external/googletest
-	url = https://github.com/google/googletest/
-	branch = master
-[submodule "benchmark"]
-	path = external/benchmark
-	url = https://github.com/google/benchmark.git
-	branch = master
 [submodule "external/ips4o"]
 	path = external/ips4o
 	url = https://github.com/SaschaWitt/ips4o.git
-	branch = master
+[submodule "external/googlebenchmark"]
+	path = external/googlebenchmark
+	url = https://github.com/google/benchmark/
+[submodule "external/googletest"]
+	path = external/googletest
+	url = https://github.com/google/googletest/
