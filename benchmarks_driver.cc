@@ -56,9 +56,14 @@ BENCHMARK_DEFINE_F(Benchmarks, IS4o)(benchmark::State &state){
     state.SetComplexityN(state.range(0));
 }
 
+static void benchmark_arguments(benchmark::internal::Benchmark* b) {
+    b->Arg(1E3)->Arg(1E5)->Arg(1E6)->Arg(5E6)->Arg(2E7)->Arg(5E7)->Arg(1E8);
+    b->Unit(benchmark::kMillisecond);
+}
 
-BENCHMARK_REGISTER_F(Benchmarks, StdSort)->RangeMultiplier(10)->Range(1E6, 1E8)->Unit(benchmark::kMillisecond)->Complexity(benchmark::BigO::oNLogN);
-BENCHMARK_REGISTER_F(Benchmarks, IS4o)->RangeMultiplier(10)->Range(1E6, 1E8)->Unit(benchmark::kMillisecond)->Complexity(benchmark::BigO::oNLogN);
+
+BENCHMARK_REGISTER_F(Benchmarks, StdSort)->Apply(benchmark_arguments)->Complexity(benchmark::BigO::oNLogN);
+BENCHMARK_REGISTER_F(Benchmarks, IS4o)->Apply(benchmark_arguments)->Complexity(benchmark::BigO::oNLogN);
 
 // Run the benchmark
 BENCHMARK_MAIN();
