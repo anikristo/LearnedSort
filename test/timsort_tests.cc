@@ -1,3 +1,4 @@
+#include "gfx/timsort.hpp"
 #include "util.hh"
 #include "gtest/gtest.h"
 #include <algorithm>
@@ -5,10 +6,9 @@
 #include <vector>
 
 using namespace std;
-
 static constexpr int NUM_RECORDS = 2e7;
 
-TEST(STD_SORT_TEST, StdNormal) {
+TEST(Timsort_TEST, StdNormal) {
 
   // Generate random input
   vector<double> arr;
@@ -23,7 +23,7 @@ TEST(STD_SORT_TEST, StdNormal) {
   auto cksm = get_checksum(arr);
 
   // Sort
-  std::sort(arr.begin(), arr.end());
+  gfx::timsort(arr.begin(), arr.end());
 
   // Test that it is sorted
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
@@ -32,7 +32,7 @@ TEST(STD_SORT_TEST, StdNormal) {
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(STD_SORT_TEST, Lognormal) {
+TEST(Timsort_TEST, Lognormal) {
 
   // Generate random input
   vector<double> arr;
@@ -47,7 +47,7 @@ TEST(STD_SORT_TEST, Lognormal) {
   auto cksm = get_checksum(arr);
 
   // Sort
-  std::sort(arr.begin(), arr.end());
+  gfx::timsort(arr.begin(), arr.end());
 
   // Test that it is sorted
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
@@ -56,7 +56,7 @@ TEST(STD_SORT_TEST, Lognormal) {
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(STD_SORT_TEST, UniformReal) {
+TEST(Timsort_TEST, UniformReal) {
 
   // Generate random input
   vector<double> arr;
@@ -71,7 +71,7 @@ TEST(STD_SORT_TEST, UniformReal) {
   auto cksm = get_checksum(arr);
 
   // Sort
-  std::sort(arr.begin(), arr.end());
+  gfx::timsort(arr.begin(), arr.end());
 
   // Test that it is sorted
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
@@ -80,7 +80,7 @@ TEST(STD_SORT_TEST, UniformReal) {
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(STD_SORT_TEST, UniformInt) {
+TEST(Timsort_TEST, UniformInt) {
 
   // Generate random input
   vector<int> arr;
@@ -95,7 +95,7 @@ TEST(STD_SORT_TEST, UniformInt) {
   auto cksm = get_checksum(arr);
 
   // Sort
-  std::sort(arr.begin(), arr.end());
+  gfx::timsort(arr.begin(), arr.end());
 
   // Test that it is sorted
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));

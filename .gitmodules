@@ -7,3 +7,6 @@
 [submodule "external/googletest"]
 	path = external/googletest
 	url = https://github.com/google/googletest/
+[submodule "external/cpp-TimSort"]
+	path = external/cpp-TimSort
+	url = https://github.com/timsort/cpp-TimSort.git

@@ -1,125 +1,105 @@
+#include "ips4o.hpp"
+#include "util.hh"
+#include "gtest/gtest.h"
 #include <algorithm>
 #include <random>
 #include <vector>
-#include "gtest/gtest.h"
-#include "ips4o.hpp"
-#include "util.hh"
 
 using namespace std;
+static constexpr int NUM_RECORDS = 2e7;
 
-namespace {
+TEST(IS4o_TEST, StdNormal) {
 
-    class IS4o_TEST : public ::testing::Test {
+  // Generate random input
+  vector<double> arr;
+  random_device rd;
+  mt19937 generator(rd());
+  normal_distribution<> distribution(0, 1);
+  for (int i = 0; i < NUM_RECORDS; i++) {
+    arr.push_back(distribution(generator));
+  }
 
-    public:
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
 
-        /// Constants ///
-        const int NUM_RECORDS = 2e7;
+  // Sort
+  ips4o::sort(arr.begin(), arr.end());
 
-        const float NORMAL_MEAN = 0;
-        const float NORMAL_STDEV = 1;
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 
-        const float LOGNORMAL_MEAN = 0;
-        const float LOGNORMAL_STDEV = 2;
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+}
 
-        const float UNIFORM_MIN = -100;
-        const float UNIFORM_MAX = 500;
+TEST(IS4o_TEST, Lognormal) {
 
-    };
+  // Generate random input
+  vector<double> arr;
+  random_device rd;
+  mt19937 generator(rd());
+  lognormal_distribution<> distribution(0, 2);
+  for (int i = 0; i < NUM_RECORDS; i++) {
+    arr.push_back(distribution(generator));
+  }
 
-    TEST_F(IS4o_TEST, StdNormal) {
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
 
-        // Generate random input
-        vector<double> arr;
-        random_device rd;
-        mt19937 generator(rd());
-        normal_distribution<> distribution(NORMAL_MEAN, NORMAL_STDEV);
-        for (int i = 0; i < NUM_RECORDS; i++) {
-            arr.push_back(distribution(generator));
-        }
+  // Sort
+  ips4o::sort(arr.begin(), arr.end());
 
-        // Calculate the checksum
-        auto cksm = get_checksum(arr);
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 
-        // Sort
-        ips4o::sort(arr.begin(), arr.end());
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+}
 
-        // Test that it is sorted
-        ASSERT_TRUE (std::is_sorted(arr.begin(), arr.end()));
+TEST(IS4o_TEST, UniformReal) {
 
-        // Test that the checksum is the same
-        ASSERT_EQ(cksm, get_checksum(arr));
-    }
+  // Generate random input
+  vector<double> arr;
+  random_device rd;
+  mt19937 generator(rd());
+  uniform_real_distribution<> distribution(-100, 500);
+  for (int i = 0; i < NUM_RECORDS; i++) {
+    arr.push_back(distribution(generator));
+  }
 
-    TEST_F(IS4o_TEST, Lognormal) {
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
 
-        // Generate random input
-        vector<double> arr;
-        random_device rd;
-        mt19937 generator(rd());
-        lognormal_distribution<> distribution(LOGNORMAL_MEAN, LOGNORMAL_STDEV);
-        for (int i = 0; i < NUM_RECORDS; i++) {
-            arr.push_back(distribution(generator));
-        }
+  // Sort
+  ips4o::sort(arr.begin(), arr.end());
 
-        // Calculate the checksum
-        auto cksm = get_checksum(arr);
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 
-        // Sort
-        ips4o::sort(arr.begin(), arr.end());
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+}
 
-        // Test that it is sorted
-        ASSERT_TRUE (std::is_sorted(arr.begin(), arr.end()));
+TEST(IS4o_TEST, UniformInt) {
 
-        // Test that the checksum is the same
-        ASSERT_EQ(cksm, get_checksum(arr));
-    }
+  // Generate random input
+  vector<int> arr;
+  random_device rd;
+  mt19937 generator(rd());
+  uniform_int_distribution<> distribution(-100, 500);
+  for (int i = 0; i < NUM_RECORDS; i++) {
+    arr.push_back(distribution(generator));
+  }
 
-    TEST_F(IS4o_TEST, UniformReal) {
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
 
-        // Generate random input
-        vector<double> arr;
-        random_device rd;
-        mt19937 generator(rd());
-        uniform_real_distribution<> distribution(UNIFORM_MIN, UNIFORM_MAX);
-        for (int i = 0; i < NUM_RECORDS; i++) {
-            arr.push_back(distribution(generator));
-        }
+  // Sort
+  ips4o::sort(arr.begin(), arr.end());
 
-        // Calculate the checksum
-        auto cksm = get_checksum(arr);
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 
-        // Sort
-        ips4o::sort(arr.begin(), arr.end());
-
-        // Test that it is sorted
-        ASSERT_TRUE (std::is_sorted(arr.begin(), arr.end()));
-
-        // Test that the checksum is the same
-        ASSERT_EQ(cksm, get_checksum(arr));
-    }
-
-    TEST_F(IS4o_TEST, UniformInt) {
-
-        // Generate random input
-        vector<int> arr;
-        random_device rd;
-        mt19937 generator(rd());
-        uniform_int_distribution<> distribution(UNIFORM_MIN, UNIFORM_MAX);
-        for (int i = 0; i < NUM_RECORDS; i++) {
-            arr.push_back(distribution(generator));
-        }
-
-        // Calculate the checksum
-        auto cksm = get_checksum(arr);
-
-        // Sort
-        ips4o::sort(arr.begin(), arr.end());
-
-        // Test that it is sorted
-        ASSERT_TRUE (std::is_sorted(arr.begin(), arr.end()));
-
-        // Test that the checksum is the same
-        ASSERT_EQ(cksm, get_checksum(arr));
-    }
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
 }
