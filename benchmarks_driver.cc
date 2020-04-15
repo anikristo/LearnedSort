@@ -4,6 +4,7 @@
 
 #include "gfx/timsort.hpp"
 #include "ips4o.hpp"
+#include "radix_sort.hh"
 
 using namespace std;
 
@@ -69,6 +70,23 @@ BENCHMARK_DEFINE_F(Benchmarks, IS4o)
   state.SetComplexityN(state.range(0));
 }
 
+BENCHMARK_DEFINE_F(Benchmarks, RadixSort)
+(benchmark::State &state) {
+  for (auto _ : state) {
+    // Re-shuffle
+    state.PauseTiming();
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(arr.begin(), arr.end(), g);
+    state.ResumeTiming();
+
+    // Sort
+    radix_sort(arr.begin(), arr.end());
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+
 BENCHMARK_DEFINE_F(Benchmarks, Timsort)
 (benchmark::State &state) {
   for (auto _ : state) {
@@ -98,6 +116,9 @@ BENCHMARK_REGISTER_F(Benchmarks, StdSort)
 BENCHMARK_REGISTER_F(Benchmarks, IS4o)
     ->Apply(benchmark_arguments)
     ->Complexity(benchmark::BigO::oNLogN);
+BENCHMARK_REGISTER_F(Benchmarks, RadixSort)
+    ->Apply(benchmark_arguments)
+    ->Complexity(benchmark::BigO::oN);
 BENCHMARK_REGISTER_F(Benchmarks, Timsort)
     ->Apply(benchmark_arguments)
     ->Complexity(benchmark::BigO::oNLogN);

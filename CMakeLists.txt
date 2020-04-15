@@ -15,6 +15,7 @@ set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 include_directories(${PROJECT_SOURCE_DIR}/external/ips4o)
 add_subdirectory(external/googletest)
 add_subdirectory(external/googlebenchmark)
+include_directories(${PROJECT_SOURCE_DIR}/external/radix)
 include_directories(${PROJECT_SOURCE_DIR}/external/cpp-TimSort/include)
 
 # Learned Sort library
