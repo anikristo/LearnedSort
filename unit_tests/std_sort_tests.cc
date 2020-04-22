@@ -6,7 +6,7 @@
 
 using namespace std;
 
-static constexpr int NUM_RECORDS = 2e7;
+extern size_t TEST_SIZE;
 
 TEST(STD_SORT_TEST, StdNormal) {
 
@@ -15,7 +15,7 @@ TEST(STD_SORT_TEST, StdNormal) {
   random_device rd;
   mt19937 generator(rd());
   normal_distribution<> distribution(0, 1);
-  for (int i = 0; i < NUM_RECORDS; i++) {
+  for (int i = 0; i < TEST_SIZE; i++) {
     arr.push_back(distribution(generator));
   }
 
@@ -39,7 +39,7 @@ TEST(STD_SORT_TEST, Lognormal) {
   random_device rd;
   mt19937 generator(rd());
   lognormal_distribution<> distribution(0, 2);
-  for (int i = 0; i < NUM_RECORDS; i++) {
+  for (int i = 0; i < TEST_SIZE; i++) {
     arr.push_back(distribution(generator));
   }
 
@@ -63,7 +63,7 @@ TEST(STD_SORT_TEST, UniformReal) {
   random_device rd;
   mt19937 generator(rd());
   uniform_real_distribution<> distribution(-100, 500);
-  for (int i = 0; i < NUM_RECORDS; i++) {
+  for (int i = 0; i < TEST_SIZE; i++) {
     arr.push_back(distribution(generator));
   }
 
@@ -87,7 +87,7 @@ TEST(STD_SORT_TEST, UniformInt) {
   random_device rd;
   mt19937 generator(rd());
   uniform_int_distribution<> distribution(-100, 500);
-  for (int i = 0; i < NUM_RECORDS; i++) {
+  for (int i = 0; i < TEST_SIZE; i++) {
     arr.push_back(distribution(generator));
   }
 

@@ -10,3 +10,6 @@
 [submodule "external/cpp-TimSort"]
 	path = external/cpp-TimSort
 	url = https://github.com/timsort/cpp-TimSort
+[submodule "external/gtest-parallel"]
+	path = external/gtest-parallel
+	url = https://github.com/google/gtest-parallel.git
