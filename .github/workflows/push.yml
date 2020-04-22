@@ -12,4 +12,4 @@ jobs:
       - name: github-action-tester
         uses: skx/github-action-tester@release-0.10  
         with:
-          script: quick-test.sh
+          script: ./quick-test.sh
