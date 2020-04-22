@@ -1,0 +1,15 @@
+on:
+    push:
+      branches:
+      - master
+  name: Push Event
+  jobs:
+    test:
+      name: Run tests
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@master
+      - name: github-action-tester
+        uses: skx/github-action-tester@release-0.10  
+        with:
+          script: quick-test.sh
