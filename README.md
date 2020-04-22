@@ -1,8 +1,8 @@
 # Learned Sort
-The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case of a Learned Sorting Algorithm](#TODO). 
+The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](#TODO). 
 
 This repository contains:
-- The Learned Sort algorithm under `lib/learned_sort.hh`
+- The Learned Sort algorithm under `src/learned_sort.hh`
 - Benchmarking code in `benchmarks_driver.cc`
 - Unit testing code under `test/`
 
