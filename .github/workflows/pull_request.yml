@@ -2,11 +2,11 @@ on: pull_request
 name: Pull Request
 jobs:
   test:
-    name: Run tests
+    name: Run tests on Pull Request
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
     - name: github-action-tester
       uses: skx/github-action-tester@release-0.10  
       with:
-        script: test.sh
+        script: ./test.sh

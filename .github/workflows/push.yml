@@ -1,11 +1,10 @@
-name: Push Event
+name: Run tests on push
 on:
     push:
       branches:
         - master
 jobs:
     test:
-      name: Run tests
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@master
