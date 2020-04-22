@@ -4,8 +4,7 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 cd ${DIR}
 
-git submodule init
-git submodule update
+git submodule update --recursive --remote
 
 if [ ! -d "${DIR}/build" ] 
 then 
