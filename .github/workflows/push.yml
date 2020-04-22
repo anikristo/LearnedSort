@@ -1,9 +1,9 @@
+name: Push Event
 on:
     push:
       branches:
-      - master
-  name: Push Event
-  jobs:
+        - master
+jobs:
     test:
       name: Run tests
       runs-on: ubuntu-latest
