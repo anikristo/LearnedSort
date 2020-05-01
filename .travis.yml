@@ -29,6 +29,6 @@ script:
   # Run the test command
   - ./test.sh
 
-  notifications:  
-    email:  
-      on_success: never  
+notifications:  
+  email:  
+    on_success: never
