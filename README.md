@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/anikristo/learned-sort.svg?branch=master)](https://travis-ci.com/anikristo/learned-sort)
+
 # Learned Sort
 The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](#TODO). 
 
