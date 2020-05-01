@@ -25,3 +25,10 @@ script:
   
   # Run the build command
   - ./compile.sh
+
+  # Run the test command
+  - ./test.sh
+
+  notifications:  
+    email:  
+      on_success: never  
