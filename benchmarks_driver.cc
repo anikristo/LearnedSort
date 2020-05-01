@@ -4,6 +4,7 @@
 
 #include "gfx/timsort.hpp"
 #include "ips4o.hpp"
+#include "src/learned_sort.hh"
 #include "radix_sort.hh"
 
 using namespace std;
@@ -42,6 +43,25 @@ protected:
   // Input array
   vector<double> arr;
 };
+
+BENCHMARK_DEFINE_F(Benchmarks, LearnedSort)
+(benchmark::State &state)
+{
+  for (auto _ : state)
+  {
+    // Re-shuffle
+    state.PauseTiming();
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(arr.begin(), arr.end(), g);
+    state.ResumeTiming();
+
+    // Sort
+    learned_sort::sort(arr.begin(), arr.end());
+  }
+
+  state.SetComplexityN(state.range(0));
+}
 
 BENCHMARK_DEFINE_F(Benchmarks, StdSort)
 (benchmark::State &state)
@@ -131,6 +151,9 @@ static void benchmark_arguments(benchmark::internal::Benchmark *b)
   b->Unit(benchmark::kMillisecond);
 }
 
+BENCHMARK_REGISTER_F(Benchmarks, LearnedSort)
+    ->Apply(benchmark_arguments)
+    ->Complexity(benchmark::BigO::oAuto);
 BENCHMARK_REGISTER_F(Benchmarks, IS4o)
     ->Apply(benchmark_arguments)
     ->Complexity(benchmark::BigO::oNLogN);
