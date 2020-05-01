@@ -28,4 +28,4 @@ script:
   - gcc -v && g++ -v && cmake --version
   
   # Run the build command
-  ./compile.sh
+  - ./compile.sh
