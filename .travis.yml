@@ -1,3 +1,7 @@
+branches:
+    only:
+      - master
+      - dev
 dist: bionic
 language:
   - cpp
