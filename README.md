@@ -6,7 +6,7 @@ The official repository for Learned Sort, a model-enhanced sorting algorithm tha
 This repository contains:
 - The Learned Sort algorithm under `src/learned_sort.hh`
 - Benchmarking code in `benchmarks_driver.cc`
-- Unit testing code under `test/`
+- Unit testing code under `unit_tests/`
 
 ## Instructions to build project
 
@@ -21,10 +21,8 @@ This uses [Google Benchmark](https://www.github.com/google/benchmark) to measure
 The benchmarks will be run for various input sizes, and with enough iterations to provide a stable statistic. 
 At the end of the benchmark for each algorithm, Google Benchmark will provide an estimation of the coefficient for the high-order term in the time complexity and report the [RMS error](https://en.wikipedia.org/wiki/Root-mean-square_deviation). 
 
-At the end of the benchmark execution, the console will display a pair-wise comparison of the running times of Learned Sort and IS4o.
-
 ## Tests
 In order to run the tests execute: `./test.sh`. 
 
-This uses [Google Test](https://www.github.com/google/googletest) to perform unit testing on Learned Sort and other basline sorting algorithms on various data distributions and data types. 
+This uses [Google Test](https://www.github.com/google/googletest) to perform unit testing on Learned Sort and other baseline sorting algorithms on various data distributions and data types. 
 After downloading this repository, run the tests to make sure everything is working fine for your system setup. 
