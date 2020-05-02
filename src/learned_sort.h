@@ -24,15 +24,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#define LEARNED_SORT_VERSION_MAJOR 0
+#define LEARNED_SORT_VERSION_MINOR 1
+
 #include <algorithm>
 #include <cmath>
-#include <functional>
 #include <iterator>
 #include <vector>
 
 using std::iterator_traits;
-using std::log;
-using std::string;
 using std::vector;
 
 namespace learned_sort
