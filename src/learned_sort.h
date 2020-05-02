@@ -1,5 +1,28 @@
-#ifndef LEARNED_SORT_HH
-#define LEARNED_SORT_HH
+#ifndef LEARNED_SORT_H
+#define LEARNED_SORT_H
+
+/**
+ * @file learned_sort.h
+ * @author Ani Kristo (anikristo@gmail.com)
+ * @brief The purpose of this file is to provide an implementation of Learned Sort, a model-enhanced sorting algorithm. 
+ * @version 0.1
+ * @date 2020-05-02
+ * 
+ * @copyright Copyright (c) 2020 Ani Kristo <anikristo@gmail.com>
+ * @copyright Copyright (C) 2020 Kapil Vaidya <kapilv@mit.edu>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <algorithm>
 #include <cmath>
@@ -1034,4 +1057,4 @@ void learned_sort::sort(RandomIt begin, RandomIt end)
   learned_sort::sort(begin, end, p);
 }
 
-#endif // LEARNED_SORT_HH
+#endif // LEARNED_SORT_H

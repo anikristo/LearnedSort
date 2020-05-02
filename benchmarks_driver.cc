@@ -1,10 +1,29 @@
+/**
+ * @file benchmarks_driver.cc
+ * @author Ani Kristo (anikristo@gmail.com)
+ * @brief Driver file for the performance benchmarks
+ * 
+ * @copyright Copyright (c) 2020 Ani Kristo (anikristo@gmail.com)
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <algorithm>
 #include <benchmark/benchmark.h>
 #include <random>
 
 #include "gfx/timsort.hpp"
 #include "ips4o.hpp"
-#include "src/learned_sort.hh"
+#include "src/learned_sort.h"
 #include "radix_sort.hh"
 
 using namespace std;
