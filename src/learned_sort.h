@@ -24,17 +24,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #define LEARNED_SORT_VERSION_MAJOR 0
 #define LEARNED_SORT_VERSION_MINOR 1
 
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <iostream>
 #include <vector>
 
 using std::iterator_traits;
 using std::vector;
+
+using std::cerr, std::endl;
 
 namespace learned_sort
 {
@@ -71,7 +73,7 @@ public:
     unsigned int batch_sz;
     unsigned int fanout;
     float overallocation_ratio;
-    float sampling_ratio;
+    float sampling_rate;
     unsigned int threshold;
     vector<unsigned int> arch;
 
@@ -79,7 +81,7 @@ public:
     static constexpr unsigned int DEFAULT_BATCH_SZ = 10;
     static constexpr unsigned int DEFAULT_FANOUT = 1e3;
     static constexpr float DEFAULT_OVERALLOCATION_RATIO = 1.1;
-    static constexpr float DEFAULT_SAMPLING_RATIO = .01;
+    static constexpr float DEFAULT_SAMPLING_RATE = .01;
     static constexpr unsigned int DEFAULT_THRESHOLD = 100;
     vector<unsigned int> DEFAULT_ARCH = {1, 1000};
     static constexpr unsigned int MIN_SORTING_SIZE = 1e4;
@@ -88,7 +90,7 @@ public:
     Params();
 
     // Constructor with custom hyperparameter values
-    Params(float sampling_ratio, float overallocation, unsigned int fanout,
+    Params(float sampling_rate, float overallocation, unsigned int fanout,
            unsigned int batch_size, unsigned int threshold, vector<unsigned int> model_arch);
   };
 
@@ -104,8 +106,8 @@ public:
 };
 
 // Training function
-template <class RandomIt, class Compare>
-RMI train(RandomIt, RandomIt, Compare, const RMI::Params &);
+template <class RandomIt>
+RMI train(RandomIt, RandomIt, RMI::Params &);
 
 // Default comparison function [std::less()] and default hyperparameters
 // Drop-in replacement for std::sort()
@@ -124,19 +126,19 @@ learned_sort::RMI::Params::Params()
   this->batch_sz = DEFAULT_BATCH_SZ;
   this->fanout = DEFAULT_FANOUT;
   this->overallocation_ratio = DEFAULT_OVERALLOCATION_RATIO;
-  this->sampling_ratio = DEFAULT_SAMPLING_RATIO;
+  this->sampling_rate = DEFAULT_SAMPLING_RATE;
   this->threshold = DEFAULT_THRESHOLD;
   this->arch = DEFAULT_ARCH;
 }
 
-learned_sort::RMI::Params::Params(float sampling_ratio, float overallocation,
+learned_sort::RMI::Params::Params(float sampling_rate, float overallocation,
                                   unsigned int fanout, unsigned int batch_sz,
                                   unsigned int threshold, vector<unsigned int> arch)
 {
   this->batch_sz = batch_sz;
   this->fanout = fanout;
   this->overallocation_ratio = overallocation;
-  this->sampling_ratio = sampling_ratio;
+  this->sampling_rate = sampling_rate;
   this->threshold = threshold;
   this->arch = std::move(arch);
 }
@@ -182,13 +184,52 @@ using namespace learned_sort;
  * @return learned_sort::RMI The trained model which, given a key, will output a
  * value between [0,1] as a predicted CDF value.
  */
-template <class RandomIt, class Compare>
-learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
-                                      Compare comp, const RMI::Params &p)
+template <class RandomIt>
+learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end, RMI::Params &p)
 {
 
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
+
+  // Determine input size
+  const unsigned int INPUT_SZ = std::distance(begin, end);
+
+  // Validate parameters
+  if (p.batch_sz >= INPUT_SZ)
+  {
+    p.batch_sz = RMI::Params::DEFAULT_BATCH_SZ;
+    cerr << "\33[93;1mWARNING\33[0m: Invalid batch size. Using default (" << RMI::Params::DEFAULT_BATCH_SZ << ")." << endl;
+  }
+
+  if (p.fanout >= INPUT_SZ)
+  {
+    p.fanout = RMI::Params::DEFAULT_FANOUT;
+    cerr << "\33[93;1mWARNING\33[0m: Invalid fanout. Using default (" << RMI::Params::DEFAULT_FANOUT << ")." << endl;
+  }
+
+  if (p.overallocation_ratio <= 0)
+  {
+    p.overallocation_ratio = 1;
+    cerr << "\33[93;1mWARNING\33[0m: Invalid overallocation ratio. Using default (" << RMI::Params::DEFAULT_OVERALLOCATION_RATIO << ")." << endl;
+  }
+
+  if (p.sampling_rate <= 0 or p.sampling_rate > 1)
+  {
+    p.sampling_rate = RMI::Params::DEFAULT_SAMPLING_RATE;
+    cerr << "\33[93;1mWARNING\33[0m: Invalid sampling rate. Using default (" << RMI::Params::DEFAULT_SAMPLING_RATE << ")." << endl;
+  }
+
+  if (p.threshold <= 0 or p.threshold >= INPUT_SZ or p.threshold >= INPUT_SZ / p.fanout)
+  {
+    p.threshold = RMI::Params::DEFAULT_THRESHOLD;
+    cerr << "\33[93;1mWARNING\33[0m: Invalid threshold. Using default (" << RMI::Params::DEFAULT_THRESHOLD << ")." << endl;
+  }
+
+  if (p.arch.size() > 2 or p.arch[0] != 1 or p.arch[1] <= 0)
+  {
+    p.arch = p.DEFAULT_ARCH;
+    cerr << "\33[93;1mWARNING\33[0m: Invalid architecture. Using default {" << p.DEFAULT_ARCH[0] << ", " << p.DEFAULT_ARCH[1] << "}." << endl;
+  }
 
   // Initialize the CDF model
   RMI rmi(p);
@@ -203,12 +244,9 @@ learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
   //                           SAMPLE                         //
   //----------------------------------------------------------//
 
-  // Determine input size
-  const unsigned int INPUT_SZ = std::distance(begin, end);
-
   // Determine sample size
   const unsigned int SAMPLE_SZ = std::min<unsigned int>(
-      INPUT_SZ, std::max<unsigned int>(p.sampling_ratio * INPUT_SZ,
+      INPUT_SZ, std::max<unsigned int>(p.sampling_rate * INPUT_SZ,
                                        RMI::Params::MIN_SORTING_SIZE));
 
   // Create a sample array
@@ -224,8 +262,7 @@ learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
   }
 
   // Sort the sample using the provided comparison function
-  std::sort(rmi.training_sample, rmi.training_sample + rmi.training_sample_sz,
-            comp);
+  std::sort(rmi.training_sample, rmi.training_sample + rmi.training_sample_sz);
 
   // Stop early if the array is identical
   if (rmi.training_sample[0] ==
@@ -1015,7 +1052,7 @@ void learned_sort::sort(RandomIt begin, RandomIt end, RMI::Params &params)
 {
 
   // Use std::sort for very small arrays
-  if (std::distance(begin, end) <= RMI::Params::MIN_SORTING_SIZE)
+  if (std::distance(begin, end) <= std::max(params.fanout * params.threshold, 5 * params.arch[1]))
   {
     std::sort(begin, end);
   }
@@ -1026,7 +1063,7 @@ void learned_sort::sort(RandomIt begin, RandomIt end, RMI::Params &params)
     typedef typename iterator_traits<RandomIt>::value_type T;
 
     // Train
-    RMI rmi = train(begin, end, std::less<T>(), params);
+    RMI rmi = train(begin, end, params);
 
     // Sort
     if (rmi.trained)
