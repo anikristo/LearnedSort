@@ -19,14 +19,16 @@
 
 #include <algorithm>
 #include <benchmark/benchmark.h>
-#include <random>
 
 #include "gfx/timsort.hpp"
 #include "ips4o.hpp"
 #include "src/learned_sort.h"
 #include "radix_sort.hh"
+#include "util.h"
 
 using namespace std;
+
+distr_t data_distr = NORMAL; // NOTE You can change the distribution here
 
 class Benchmarks : public benchmark::Fixture
 {
@@ -34,16 +36,24 @@ protected:
   void SetUp(const ::benchmark::State &state)
   {
 
-    // Initialize random engine with normal distribution
-    random_device rd;
-    mt19937 generator(rd());
-    normal_distribution<> distribution(0, 1);
+    size_t size = state.range(0);
 
-    // Populate the input
-    const auto INPUT_SZ = state.range(0);
-    for (int i = 0; i < INPUT_SZ; i++)
+    switch (data_distr)
     {
-      arr.push_back(distribution(generator));
+    case NORMAL:
+      arr = normal_distr<double>(size);
+
+    case UNIFORM:
+      arr = uniform_distr<double>(size);
+
+    case EXPONENTIAL:
+      arr = exponential_distr<double>(size);
+
+    case LOGNORMAL:
+      arr = lognormal_distr<double>(size);
+
+    default:
+      arr = normal_distr<double>(size);
     }
   }
 

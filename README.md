@@ -53,9 +53,10 @@ However, besides the Learned Sort implementation, this repository contains bench
 ### Building this project
 In order to build this project, you will need to have the following software installed in your system:
 * [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-* [CMake v3.2+](https://cmake.org/install/)
+* [CMake](https://cmake.org/install/)
+* Compiler with support for C++20
 
-__NOTE:__ This software was tested on a Linux Ubuntu machine with GCC-9. 
+__NOTE__ This repository has only been tested on [GCC 9.3](https://gcc.gnu.org/releases.html) and [Clang 7.0.0](https://releases.llvm.org/7.0.0/tools/clang/docs/ReleaseNotes.html) on Linux Ubuntu Focal (20.04 LTS).
 
 ```sh
 # Clone this repository

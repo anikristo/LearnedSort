@@ -18,7 +18,7 @@
  */
 
 #include "gfx/timsort.hpp"
-#include "util.h"
+#include "../util.h"
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <random>
@@ -31,14 +31,7 @@ TEST(Timsort_TEST, StdNormal)
 {
 
   // Generate random input
-  vector<double> arr;
-  random_device rd;
-  mt19937 generator(rd());
-  normal_distribution<> distribution(0, 1);
-  for (int i = 0; i < TEST_SIZE; i++)
-  {
-    arr.push_back(distribution(generator));
-  }
+  auto arr = normal_distr<double>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
@@ -57,14 +50,7 @@ TEST(Timsort_TEST, Lognormal)
 {
 
   // Generate random input
-  vector<double> arr;
-  random_device rd;
-  mt19937 generator(rd());
-  lognormal_distribution<> distribution(0, 2);
-  for (int i = 0; i < TEST_SIZE; i++)
-  {
-    arr.push_back(distribution(generator));
-  }
+  auto arr = lognormal_distr<double>(TEST_SIZE, 0, 2);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
@@ -83,14 +69,7 @@ TEST(Timsort_TEST, UniformReal)
 {
 
   // Generate random input
-  vector<double> arr;
-  random_device rd;
-  mt19937 generator(rd());
-  uniform_real_distribution<> distribution(-100, 500);
-  for (int i = 0; i < TEST_SIZE; i++)
-  {
-    arr.push_back(distribution(generator));
-  }
+  auto arr = uniform_distr<double>(TEST_SIZE, -100, 500);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
@@ -109,14 +88,7 @@ TEST(Timsort_TEST, UniformInt)
 {
 
   // Generate random input
-  vector<int> arr;
-  random_device rd;
-  mt19937 generator(rd());
-  uniform_int_distribution<> distribution(-100, 500);
-  for (int i = 0; i < TEST_SIZE; i++)
-  {
-    arr.push_back(distribution(generator));
-  }
+  auto arr = uniform_distr<int>(TEST_SIZE, -1000, 200000);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);

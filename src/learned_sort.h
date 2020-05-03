@@ -36,7 +36,8 @@
 using std::iterator_traits;
 using std::vector;
 
-using std::cerr, std::endl;
+using std::cerr;
+using std::endl;
 
 namespace learned_sort
 {
@@ -459,7 +460,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi)
   vector<T> major_bckts(INPUT_SZ + 1);
 
   // Array to keep track of the major bucket sizes
-  unsigned int major_bckt_sizes[FANOUT] = {0};
+  vector<unsigned int> major_bckt_sizes(FANOUT, 0);
 
   // Initialize the exception lists for handling repeated keys
   vector<T> repeated_keys; // Stores the heavily repeated key values
@@ -685,7 +686,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi)
   unsigned int pred_idx_cache[THRESHOLD];
 
   // Caches the predicted bucket indices for each element in the batch
-  unsigned int batch_cache[BATCH_SZ] = {0};
+  vector<unsigned int> batch_cache(BATCH_SZ, 0);
 
   // Iterate over each major bucket
   for (unsigned int major_bckt_idx = 0; major_bckt_idx < FANOUT; ++major_bckt_idx)
@@ -696,7 +697,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi)
 
     // Array to keep track of sizes for the minor buckets in the current
     // bucket
-    unsigned int minor_bckt_sizes[NUM_MINOR_BCKT_PER_MAJOR_BCKT] = {0};
+    vector<unsigned int> minor_bckt_sizes(NUM_MINOR_BCKT_PER_MAJOR_BCKT, 0);
 
     // Find out the number of batches for this bucket
     unsigned int num_batches = major_bckt_sizes[major_bckt_idx] / BATCH_SZ;
@@ -810,7 +811,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi)
         bckt_start_offset = 1. * (major_bckt_idx * NUM_MINOR_BCKT_PER_MAJOR_BCKT + bckt_idx) * INPUT_SZ / TOT_NUM_MINOR_BCKTS;
 
         // Count array for the model-enhanced counting sort subroutine
-        unsigned int cnt_hist[THRESHOLD] = {0};
+        vector<unsigned int> cnt_hist(THRESHOLD, 0);
 
         /*
         * OPTIMIZATION

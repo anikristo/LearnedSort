@@ -1,10 +1,10 @@
-#ifndef TSTS_UTIL_H
-#define TSTS_UTIL_H
+#ifndef UTIL_H
+#define UTIL_H
 
 /**
- * @file is4o_tests.cc
+ * @file util.h
  * @author Ani Kristo (anikristo@gmail.com)
- * @brief Unit test files for IS4o
+ * @brief Shared util functions for benchmarks and tests
  * 
  * @copyright Copyright (c) 2020 Ani Kristo (anikristo@gmail.com)
  * This program is free software: you can redistribute it and/or modify
@@ -20,9 +20,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "util.h"
 #include <vector>
+#include <random>
 
 using namespace std;
+
+// An enumeration of data distribution types to generate for the benchmarks.
+enum distr_t
+{
+    NORMAL,
+    UNIFORM,
+    EXPONENTIAL,
+    LOGNORMAL
+};
 
 // Helper table for hash values for the checksum function
 static constexpr unsigned short crc_table[256] = {
@@ -57,28 +68,111 @@ static constexpr unsigned short crc_table[256] = {
     0x2e93, 0x3eb2, 0x0ed1, 0x1ef0};
 
 // CRC32 checksum calculation
-template <class T> long long int get_checksum(vector<T> arr) {
+template <class T>
+long long int get_checksum(vector<T> arr)
+{
 
-  constexpr auto BYTE_SZ = 8;
-  constexpr auto BYTE_MASK = 0xFF;
+    constexpr auto BYTE_SZ = 8;
+    constexpr auto BYTE_MASK = 0xFF;
 
-  long long int total_checksum = 0, local_checksum = 0;
-  long long int temp;
+    long long int total_checksum = 0, local_checksum = 0;
+    long long int temp;
 
-  vector<T> cpy(arr.begin(), arr.end());
+    vector<T> cpy(arr.begin(), arr.end());
 
-  for (int i = 0; i < arr.size(); i++) {
+    for (int i = 0; i < arr.size(); i++)
+    {
 
-    for (int j = 0; j < sizeof(T); j++) {
-      temp = ((short)(((char *)(cpy.data() + i))[j])++ ^
-              (local_checksum >> BYTE_SZ)) &
-             BYTE_MASK;
-      local_checksum = crc_table[temp] ^ (local_checksum << BYTE_SZ);
+        for (int j = 0; j < sizeof(T); j++)
+        {
+            temp = ((short)(((char *)(cpy.data() + i))[j])++ ^
+                    (local_checksum >> BYTE_SZ)) &
+                   BYTE_MASK;
+            local_checksum = crc_table[temp] ^ (local_checksum << BYTE_SZ);
+        }
+        total_checksum += local_checksum;
+        local_checksum = 0;
     }
-    total_checksum += local_checksum;
-    local_checksum = 0;
-  }
-  return total_checksum;
-};
+    return total_checksum;
+}
 
-#endif // TSTS_UTIL_H
+//-----------------------------------------------------------------------//
+//                      Synthetic data generators                        //
+//-----------------------------------------------------------------------//
+template<class T>
+vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1)
+{
+
+    vector<T> arr;
+    // Initialize random engine with normal distribution
+    random_device rd;
+    mt19937 generator(rd());
+    normal_distribution<> distribution(mean, stddev);
+
+    // Populate the input
+    for (int i = 0; i < size; i++)
+    {
+        arr.push_back(distribution(generator));
+    }
+
+    return arr;
+}
+
+template<class T>
+vector<T> uniform_distr(size_t size, double a = 0, double b = 1)
+{
+
+    vector<T> arr;
+    // Initialize random engine with normal distribution
+    random_device rd;
+    mt19937 generator(rd());
+    uniform_real_distribution<> distribution(a, b);
+
+    // Populate the input
+    for (int i = 0; i < size; i++)
+    {
+        arr.push_back(distribution(generator));
+    }
+
+    return arr;
+}
+
+template<class T>
+vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 1e6)
+{
+
+    vector<T> arr;
+    // Initialize random engine with normal distribution
+    random_device rd;
+    mt19937 generator(rd());
+    exponential_distribution<> distribution(lambda);
+
+    // Populate the input
+    for (int i = 0; i < size; i++)
+    {
+        arr.push_back(distribution(generator) * scale);
+    }
+
+    return arr;
+}
+
+template<class T>
+vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1, double scale = 1e6)
+{
+
+    vector<T> arr;
+    // Initialize random engine with normal distribution
+    random_device rd;
+    mt19937 generator(rd());
+    lognormal_distribution<> distribution(mean, stddev);
+
+    // Populate the input
+    for (int i = 0; i < size; i++)
+    {
+        arr.push_back(distribution(generator) * scale);
+    }
+
+    return arr;
+}
+
+#endif // UTIL_H
