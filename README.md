@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     learned_sort::sort(arr.begin(), arr.end());
 }
 ```
-To get started, see [Build instructions](#building-the-project) and [Testing instructions](#running-unit-tests).
+To get started, see [Build instructions](#building-this-project) and [Testing instructions](#running-the-unit-tests).
 
 ---
 
@@ -32,7 +32,7 @@ To get started, see [Build instructions](#building-the-project) and [Testing ins
     1. [Basic usage](#basic-usage)
     1. [More features](#more-features)
 1. [Limitations](#limitations)
-1. [License & credits](#license-&-credits)
+1. [License & credits](#license--credits)
 
 ---
 
@@ -182,7 +182,7 @@ RMI::Params p(
 * This implementation of Learned Sort is only compatible with 2-layer RMI models as they have resulted in the most optimal performance. 
 * Currently it is not possible to sort records that contain payloads, i.e., the algorithm can only shuffle the keys in a sorted order. We are in the works of adding support for payloads.
 * This implementation only supports numerical keys, while strings and other complex types are currently unsupported.
-* This is the out-of-place variant of LearnedSort.
+* This is the out-of-place variant of Learned Sort.
 
 ## License & Credits
 This work is licensed under the [GNU General Public License v3.0](LICENSE) and any use in academic settings must cite the corresponding paper:
@@ -195,7 +195,7 @@ This work is licensed under the [GNU General Public License v3.0](LICENSE) and a
         isbn =      {97814503673562006},
         publisher = {Association for Computing Machinery},
         address =   {New York, NY, USA},
-        url =   {https://doi.org/10.1145/3318464.3389752},
+        url =       {https://doi.org/10.1145/3318464.3389752},
         booktitle = {{Proceedings of the 2020 ACM SIGMOD International Conference on Management of data}},
         location =  {Portland, OR, USA},
         series =    {SIGMOD ’20}
