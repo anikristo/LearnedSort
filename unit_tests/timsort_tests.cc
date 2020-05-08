@@ -2,7 +2,7 @@
  * @file timsort_tests.cc
  * @author Ani Kristo (anikristo@gmail.com)
  * @brief Unit test files for Timsort
- * 
+ *
  * @copyright Copyright (c) 2020 Ani Kristo (anikristo@gmail.com)
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "gfx/timsort.hpp"
-#include "../util.h"
-#include "gtest/gtest.h"
 #include <algorithm>
 #include <random>
 #include <vector>
 
+#include "../util.h"
+#include "gfx/timsort.hpp"
+#include "gtest/gtest.h"
+
 using namespace std;
 extern size_t TEST_SIZE;
 
-TEST(Timsort_TEST, StdNormal)
-{
-
+TEST(Timsort_TEST, StdNormal) {
   // Generate random input
   auto arr = normal_distr<double>(TEST_SIZE);
 
@@ -46,9 +45,7 @@ TEST(Timsort_TEST, StdNormal)
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(Timsort_TEST, Lognormal)
-{
-
+TEST(Timsort_TEST, Lognormal) {
   // Generate random input
   auto arr = lognormal_distr<double>(TEST_SIZE, 0, 2);
 
@@ -65,9 +62,7 @@ TEST(Timsort_TEST, Lognormal)
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(Timsort_TEST, UniformReal)
-{
-
+TEST(Timsort_TEST, UniformReal) {
   // Generate random input
   auto arr = uniform_distr<double>(TEST_SIZE, -100, 500);
 
@@ -84,9 +79,7 @@ TEST(Timsort_TEST, UniformReal)
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(Timsort_TEST, UniformInt)
-{
-
+TEST(Timsort_TEST, UniformInt) {
   // Generate random input
   auto arr = uniform_distr<int>(TEST_SIZE, -1000, 200000);
 

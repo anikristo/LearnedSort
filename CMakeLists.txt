@@ -13,14 +13,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 
 # Dependencies
-include_directories(${PROJECT_SOURCE_DIR}/external/ips4o)
-add_subdirectory(external/googletest)
-add_subdirectory(external/googlebenchmark)
-include_directories(${PROJECT_SOURCE_DIR}/external/radix)
-include_directories(${PROJECT_SOURCE_DIR}/external/cpp-TimSort/include)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/ips4o)
+add_subdirectory(third_party/googletest)
+add_subdirectory(third_party/googlebenchmark)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/radix)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/cpp-TimSort/include)
 
 # Learned Sort library
-include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Executable
 set(BINARY ${CMAKE_PROJECT_NAME}_benchmarks)

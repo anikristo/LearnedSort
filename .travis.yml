@@ -27,7 +27,7 @@ script:
   - ./compile.sh
 
   # Run the test command
-  - ./test.sh
+  - ${TRAVIS_BUILD_DIR}/third_party/gtest-parallel/gtest-parallel ${TRAVIS_BUILD_DIR}/build/bin/LearnedSort_tests --repeat=5 --workers=5
 
 notifications:  
   email:  

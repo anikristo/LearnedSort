@@ -6,4 +6,4 @@ then
 ./compile.sh
 fi
 
-${DIR}/external/gtest-parallel/gtest-parallel ${DIR}/build/bin/LearnedSort_tests --repeat=16 --workers=16
+${DIR}/third_party/gtest-parallel/gtest-parallel ${DIR}/build/bin/LearnedSort_tests --repeat=100 --workers=32

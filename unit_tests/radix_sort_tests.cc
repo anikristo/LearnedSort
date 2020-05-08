@@ -2,7 +2,7 @@
  * @file radix_sort_tests.cc
  * @author Ani Kristo (anikristo@gmail.com)
  * @brief Unit test files for Radix Sort
- * 
+ *
  * @copyright Copyright (c) 2020 Ani Kristo (anikristo@gmail.com)
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,20 +17,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "radix_sort.hh"
-#include "../util.h"
-#include "gtest/gtest.h"
 #include <algorithm>
 #include <random>
 #include <vector>
+
+#include "../util.h"
+#include "gtest/gtest.h"
+#include "radix_sort.hh"
 
 using namespace std;
 
 extern size_t TEST_SIZE;
 
-TEST(RADIX_SORT_TEST, StdNormal)
-{
-
+TEST(RADIX_SORT_TEST, StdNormal) {
   // Generate random input
   auto arr = normal_distr<double>(TEST_SIZE);
 
@@ -47,9 +46,7 @@ TEST(RADIX_SORT_TEST, StdNormal)
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(RADIX_SORT_TEST, Lognormal)
-{
-
+TEST(RADIX_SORT_TEST, Lognormal) {
   // Generate random input
   auto arr = lognormal_distr<double>(TEST_SIZE, 0, 2);
 
@@ -66,9 +63,7 @@ TEST(RADIX_SORT_TEST, Lognormal)
   ASSERT_EQ(cksm, get_checksum(arr));
 }
 
-TEST(RADIX_SORT_TEST, UniformReal)
-{
-
+TEST(RADIX_SORT_TEST, UniformReal) {
   // Generate random input
   auto arr = normal_distr<double>(TEST_SIZE, -100, 500);
 

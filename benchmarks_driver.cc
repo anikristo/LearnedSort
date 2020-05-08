@@ -2,7 +2,7 @@
  * @file benchmarks_driver.cc
  * @author Ani Kristo (anikristo@gmail.com)
  * @brief Driver file for the performance benchmarks
- * 
+ *
  * @copyright Copyright (c) 2020 Ani Kristo (anikristo@gmail.com)
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,51 +17,46 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
 #include <benchmark/benchmark.h>
+
+#include <algorithm>
 
 #include "gfx/timsort.hpp"
 #include "ips4o.hpp"
-#include "src/learned_sort.h"
 #include "radix_sort.hh"
+#include "learned_sort.h"
 #include "util.h"
 
 using namespace std;
 
-distr_t data_distr = NORMAL; // NOTE You can change the distribution here
+distr_t data_distr = NORMAL;  // NOTE You can change the distribution here
 
-class Benchmarks : public benchmark::Fixture
-{
-protected:
-  void SetUp(const ::benchmark::State &state)
-  {
-
+class Benchmarks : public benchmark::Fixture {
+ protected:
+  void SetUp(const ::benchmark::State &state) {
     size_t size = state.range(0);
 
-    switch (data_distr)
-    {
-    case NORMAL:
-      arr = normal_distr<double>(size);
+    switch (data_distr) {
+      case NORMAL:
+        arr = normal_distr<double>(size);
 
-    case UNIFORM:
-      arr = uniform_distr<double>(size);
+      case UNIFORM:
+        arr = uniform_distr<double>(size);
 
-    case EXPONENTIAL:
-      arr = exponential_distr<double>(size);
+      case EXPONENTIAL:
+        arr = exponential_distr<double>(size);
 
-    case LOGNORMAL:
-      arr = lognormal_distr<double>(size);
+      case LOGNORMAL:
+        arr = lognormal_distr<double>(size);
 
-    default:
-      arr = normal_distr<double>(size);
+      default:
+        arr = normal_distr<double>(size);
     }
   }
 
-  void TearDown(const ::benchmark::State &state)
-  {
+  void TearDown(const ::benchmark::State &state) {
     // Verify that the array is sorted
-    if (!is_sorted(arr.begin(), arr.end()))
-    {
+    if (!is_sorted(arr.begin(), arr.end())) {
       cerr << "Array not sorted! Exiting." << endl;
       exit(EXIT_FAILURE);
     }
@@ -74,10 +69,8 @@ protected:
 };
 
 BENCHMARK_DEFINE_F(Benchmarks, LearnedSort)
-(benchmark::State &state)
-{
-  for (auto _ : state)
-  {
+(benchmark::State &state) {
+  for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
     std::random_device rd;
@@ -93,10 +86,8 @@ BENCHMARK_DEFINE_F(Benchmarks, LearnedSort)
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, StdSort)
-(benchmark::State &state)
-{
-  for (auto _ : state)
-  {
+(benchmark::State &state) {
+  for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
     std::random_device rd;
@@ -112,10 +103,8 @@ BENCHMARK_DEFINE_F(Benchmarks, StdSort)
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, IS4o)
-(benchmark::State &state)
-{
-  for (auto _ : state)
-  {
+(benchmark::State &state) {
+  for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
     std::random_device rd;
@@ -131,10 +120,8 @@ BENCHMARK_DEFINE_F(Benchmarks, IS4o)
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, RadixSort)
-(benchmark::State &state)
-{
-  for (auto _ : state)
-  {
+(benchmark::State &state) {
+  for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
     std::random_device rd;
@@ -150,10 +137,8 @@ BENCHMARK_DEFINE_F(Benchmarks, RadixSort)
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, Timsort)
-(benchmark::State &state)
-{
-  for (auto _ : state)
-  {
+(benchmark::State &state) {
+  for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
     std::random_device rd;
@@ -168,13 +153,12 @@ BENCHMARK_DEFINE_F(Benchmarks, Timsort)
   state.SetComplexityN(state.range(0));
 }
 
-static void benchmark_arguments(benchmark::internal::Benchmark *b)
-{
+static void benchmark_arguments(benchmark::internal::Benchmark *b) {
   // Set input size parameter
-  b->Arg(1E6); // 1M
-  b->Arg(1E7); // 10M
-  b->Arg(1E8); // 100M
-  b->Arg(1E9); // 1B
+  b->Arg(1E6);  // 1M
+  b->Arg(1E7);  // 10M
+  b->Arg(1E8);  // 100M
+  b->Arg(1E9);  // 1B
 
   // Set time measurement unit
   b->Unit(benchmark::kMillisecond);

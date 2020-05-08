@@ -1,15 +1,15 @@
-[submodule "external/ips4o"]
-	path = external/ips4o
+[submodule "third_party/ips4o"]
+	path = third_party/ips4o
 	url = https://github.com/SaschaWitt/ips4o.git
-[submodule "external/googlebenchmark"]
-	path = external/googlebenchmark
+[submodule "third_party/googlebenchmark"]
+	path = third_party/googlebenchmark
 	url = https://github.com/google/benchmark/
-[submodule "external/googletest"]
-	path = external/googletest
+[submodule "third_party/googletest"]
+	path = third_party/googletest
 	url = https://github.com/google/googletest/
-[submodule "external/cpp-TimSort"]
-	path = external/cpp-TimSort
+[submodule "third_party/cpp-TimSort"]
+	path = third_party/cpp-TimSort
 	url = https://github.com/timsort/cpp-TimSort
-[submodule "external/gtest-parallel"]
-	path = external/gtest-parallel
+[submodule "third_party/gtest-parallel"]
+	path = third_party/gtest-parallel
 	url = https://github.com/google/gtest-parallel.git
