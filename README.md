@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-### More features
+### Function signatures
 
 The Learned Sort library provides the following functions:
 
@@ -178,6 +178,8 @@ void learned_sort::sort(RandomIt begin, RandomIt end, learned_sort::RMI::Params 
 template <class RandomIt>
 learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end, learned_sort::RMI::Params &p);
 ```
+
+### Training and sorting parameters
 
 In order to sort using a custom set of parameters, you can create an `RMI::Params` object as follows, and pass it to the sorting function:
 
@@ -197,6 +199,45 @@ RMI::Params p(
     model_architecture  // vector<unsigned int>, default {1, 1000} (Each number represents the number of linear models in the layer of the RMI)
     );
 ```
+
+### Benchmarking on different data distributions
+
+The default distribution of the input data for the benchmarks is set to a Standard Normal distribution (`µ=0; σ=1`), however, we provide synthetic data generators for:
+
+- __Normal Distribution__:
+
+```cpp
+template<class T>
+vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1);
+```
+
+- __Uniform Distribution__:
+
+```cpp
+template<class T>
+vector<T> uniform_distr(size_t size, double a = 0, double b = 1);
+```
+
+- __Exponential Distribution__:
+
+```cpp
+template<class T>
+vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 1e6);
+```
+
+- __Lognormal Distribution__:
+
+```cpp
+template<class T>
+vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1, double scale = 1e6);
+```
+
+In order to switch the data distribution, change Line 32 in `benchmarks_driver.cc` with either `UNIFORM`,  `EXPONENTIAL`, or `LOGNORMAL`:
+
+```cpp
+distr_t DATA_DISTR = NORMAL;  // NOTE: You can change the distribution here
+```
+
 
 ## Limitations
 

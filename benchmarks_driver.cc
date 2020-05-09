@@ -29,14 +29,14 @@
 
 using namespace std;
 
-distr_t data_distr = NORMAL;  // NOTE You can change the distribution here
+distr_t DATA_DISTR = NORMAL;  // NOTE: You can change the distribution here
 
 class Benchmarks : public benchmark::Fixture {
  protected:
   void SetUp(const ::benchmark::State &state) {
     size_t size = state.range(0);
 
-    switch (data_distr) {
+    switch (DATA_DISTR) {
       case NORMAL:
         arr = normal_distr<double>(size);
 
