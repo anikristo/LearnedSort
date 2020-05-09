@@ -246,6 +246,9 @@ distr_t DATA_DISTR = NORMAL;  // NOTE: You can change the distribution here
 - This implementation only supports numerical keys, while strings and other complex types are currently unsupported.
 - This is the out-of-place variant of Learned Sort.
 
+### Known bugs
+Refer to the [Issues](https://github.com/learnedsystems/LearnedSort/issues?q=is%3Aissue+is%3Aopen+label%3Abug) page for known bugs.
+
 ## License & Credits
 
 This work is licensed under the [GNU General Public License v3.0](LICENSE) and any use in academic settings must cite the corresponding paper:
