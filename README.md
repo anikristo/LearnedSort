@@ -1,9 +1,9 @@
 # Learned Sort
 
-[![Build Status](https://travis-ci.com/anikristo/learned-sort.svg?branch=master)](https://travis-ci.com/anikristo/learned-sort)
+[![Build Status](https://travis-ci.com/learnedsystems/learned-sort.svg?branch=master)](https://travis-ci.com/learnedsystems/learned-sort)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](#).
+The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](LearnedSort_Paper.pdf).
 
 Example:
 
@@ -71,7 +71,7 @@ __NOTE__ This repository has only been tested on [GCC 9.3](https://gcc.gnu.org/r
 
 ```sh
 # Clone this repository
-git clone --recursive https://github.com/anikristo/learned-sort.git
+git clone --recursive https://github.com/learnedsystems/learned-sort.git
 
 # Change into the code directory
 cd learned-sort
