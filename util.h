@@ -80,10 +80,10 @@ long long int get_checksum(vector<T> arr)
 
     vector<T> cpy(arr.begin(), arr.end());
 
-    for (int i = 0; i < arr.size(); i++)
+    for (size_t i = 0; i < arr.size(); i++)
     {
 
-        for (int j = 0; j < sizeof(T); j++)
+        for (size_t j = 0; j < sizeof(T); j++)
         {
             temp = ((short)(((char *)(cpy.data() + i))[j])++ ^
                     (local_checksum >> BYTE_SZ)) &
@@ -110,7 +110,7 @@ vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1)
     normal_distribution<> distribution(mean, stddev);
 
     // Populate the input
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         arr.push_back(distribution(generator));
     }
@@ -129,7 +129,7 @@ vector<T> uniform_distr(size_t size, double a = 0, double b = 1)
     uniform_real_distribution<> distribution(a, b);
 
     // Populate the input
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         arr.push_back(distribution(generator));
     }
@@ -148,7 +148,7 @@ vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 1e6)
     exponential_distribution<> distribution(lambda);
 
     // Populate the input
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         arr.push_back(distribution(generator) * scale);
     }
@@ -167,7 +167,7 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1, doubl
     lognormal_distribution<> distribution(mean, stddev);
 
     // Populate the input
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         arr.push_back(distribution(generator) * scale);
     }
