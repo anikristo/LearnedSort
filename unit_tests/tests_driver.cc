@@ -26,9 +26,9 @@ using namespace std;
 
 /**
  * @brief Global variable dictating the size of the tests (i.e., the number of
- * elements in the random arrays). 20M is the default test size.
+ * elements in the random arrays). Below is the default test size.
  */
-size_t TEST_SIZE = 2e7;
+size_t TEST_SIZE = 12345678;
 
 int main(int argc, char **argv) {
   // Parse command line arguments

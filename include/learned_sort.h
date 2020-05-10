@@ -54,6 +54,7 @@ struct training_point {
   double y;
 };
 
+template <class T>
 class RMI {
  public:
   // Individual linear models
@@ -93,8 +94,7 @@ class RMI {
   // Member variables of the CDF model
   bool trained;
   vector<vector<linear_model>> models;
-  double *training_sample = nullptr;
-  unsigned int training_sample_sz = 0;
+  vector<T> training_sample;
   Params hp;
 
   // CDF model constructor
@@ -103,7 +103,9 @@ class RMI {
 
 // Training function
 template <class RandomIt>
-RMI train(RandomIt, RandomIt, RMI::Params &);
+RMI<typename iterator_traits<RandomIt>::value_type> train(
+    RandomIt, RandomIt,
+    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &);
 
 // Default comparison function [std::less()] and default hyperparameters
 // Drop-in replacement for std::sort()
@@ -112,12 +114,15 @@ void sort(RandomIt, RandomIt);
 
 // Default comparison function [std::less()] and custom hyperparameters
 template <class RandomIt>
-void sort(RandomIt, RandomIt, RMI::Params &);
+void sort(
+    RandomIt, RandomIt,
+    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &);
 }  // namespace learned_sort
 
 using namespace learned_sort;
 
-learned_sort::RMI::Params::Params() {
+template <class T>
+learned_sort::RMI<T>::Params::Params() {
   this->batch_sz = DEFAULT_BATCH_SZ;
   this->fanout = DEFAULT_FANOUT;
   this->overallocation_ratio = DEFAULT_OVERALLOCATION_RATIO;
@@ -126,10 +131,11 @@ learned_sort::RMI::Params::Params() {
   this->arch = DEFAULT_ARCH;
 }
 
-learned_sort::RMI::Params::Params(float sampling_rate, float overallocation,
-                                  unsigned int fanout, unsigned int batch_sz,
-                                  unsigned int threshold,
-                                  vector<unsigned int> arch) {
+template <class T>
+learned_sort::RMI<T>::Params::Params(float sampling_rate, float overallocation,
+                                     unsigned int fanout, unsigned int batch_sz,
+                                     unsigned int threshold,
+                                     vector<unsigned int> arch) {
   this->batch_sz = batch_sz;
   this->fanout = fanout;
   this->overallocation_ratio = overallocation;
@@ -138,7 +144,8 @@ learned_sort::RMI::Params::Params(float sampling_rate, float overallocation,
   this->arch = std::move(arch);
 }
 
-learned_sort::RMI::RMI(Params p) {
+template <class T>
+learned_sort::RMI<T>::RMI(Params p) {
   this->trained = false;
   this->hp = p;
   this->models.resize(p.arch.size());
@@ -178,8 +185,10 @@ using namespace learned_sort;
  * value between [0,1] as a predicted CDF value.
  */
 template <class RandomIt>
-learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
-                                      RMI::Params &p) {
+learned_sort::RMI<typename iterator_traits<RandomIt>::value_type>
+learned_sort::train(
+    RandomIt begin, RandomIt end,
+    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &p) {
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
 
@@ -188,35 +197,35 @@ learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
 
   // Validate parameters
   if (p.batch_sz >= INPUT_SZ) {
-    p.batch_sz = RMI::Params::DEFAULT_BATCH_SZ;
+    p.batch_sz = RMI<T>::Params::DEFAULT_BATCH_SZ;
     cerr << "\33[93;1mWARNING\33[0m: Invalid batch size. Using default ("
-         << RMI::Params::DEFAULT_BATCH_SZ << ")." << endl;
+         << RMI<T>::Params::DEFAULT_BATCH_SZ << ")." << endl;
   }
 
   if (p.fanout >= INPUT_SZ) {
-    p.fanout = RMI::Params::DEFAULT_FANOUT;
+    p.fanout = RMI<T>::Params::DEFAULT_FANOUT;
     cerr << "\33[93;1mWARNING\33[0m: Invalid fanout. Using default ("
-         << RMI::Params::DEFAULT_FANOUT << ")." << endl;
+         << RMI<T>::Params::DEFAULT_FANOUT << ")." << endl;
   }
 
   if (p.overallocation_ratio <= 0) {
     p.overallocation_ratio = 1;
     cerr << "\33[93;1mWARNING\33[0m: Invalid overallocation ratio. Using "
             "default ("
-         << RMI::Params::DEFAULT_OVERALLOCATION_RATIO << ")." << endl;
+         << RMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO << ")." << endl;
   }
 
   if (p.sampling_rate <= 0 or p.sampling_rate > 1) {
-    p.sampling_rate = RMI::Params::DEFAULT_SAMPLING_RATE;
+    p.sampling_rate = RMI<T>::Params::DEFAULT_SAMPLING_RATE;
     cerr << "\33[93;1mWARNING\33[0m: Invalid sampling rate. Using default ("
-         << RMI::Params::DEFAULT_SAMPLING_RATE << ")." << endl;
+         << RMI<T>::Params::DEFAULT_SAMPLING_RATE << ")." << endl;
   }
 
   if (p.threshold <= 0 or p.threshold >= INPUT_SZ or
       p.threshold >= INPUT_SZ / p.fanout) {
-    p.threshold = RMI::Params::DEFAULT_THRESHOLD;
+    p.threshold = RMI<T>::Params::DEFAULT_THRESHOLD;
     cerr << "\33[93;1mWARNING\33[0m: Invalid threshold. Using default ("
-         << RMI::Params::DEFAULT_THRESHOLD << ")." << endl;
+         << RMI<T>::Params::DEFAULT_THRESHOLD << ")." << endl;
   }
 
   if (p.arch.size() > 2 or p.arch[0] != 1 or p.arch[1] <= 0) {
@@ -226,7 +235,7 @@ learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
   }
 
   // Initialize the CDF model
-  RMI rmi(p);
+  RMI<T> rmi(p);
   static const unsigned int NUM_LAYERS = p.arch.size();
   vector<vector<vector<training_point<T>>>> training_data(NUM_LAYERS);
   for (unsigned int layer_idx = 0; layer_idx < NUM_LAYERS; ++layer_idx) {
@@ -240,25 +249,24 @@ learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
   // Determine sample size
   const unsigned int SAMPLE_SZ = std::min<unsigned int>(
       INPUT_SZ, std::max<unsigned int>(p.sampling_rate * INPUT_SZ,
-                                       RMI::Params::MIN_SORTING_SIZE));
+                                       RMI<T>::Params::MIN_SORTING_SIZE));
 
   // Create a sample array
-  rmi.training_sample = new double[SAMPLE_SZ];
+  rmi.training_sample.reserve(SAMPLE_SZ);
 
   // Start sampling
   unsigned int offset = static_cast<unsigned int>(1. * INPUT_SZ / SAMPLE_SZ);
   for (auto i = begin; i < end; i += offset) {
     // NOTE:  We don't directly assign SAMPLE_SZ to rmi.training_sample_sz
     //        to avoid issues with divisibility
-    rmi.training_sample[rmi.training_sample_sz++] = static_cast<double>(*i);
+    rmi.training_sample.push_back(*i);
   }
 
   // Sort the sample using the provided comparison function
-  std::sort(rmi.training_sample, rmi.training_sample + rmi.training_sample_sz);
+  std::sort(rmi.training_sample.begin(), rmi.training_sample.end());
 
   // Stop early if the array is identical
-  if (rmi.training_sample[0] ==
-      rmi.training_sample[rmi.training_sample_sz - 1]) {
+  if (rmi.training_sample.front() == rmi.training_sample.back()) {
     return rmi;
   }
 
@@ -268,16 +276,12 @@ learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
 
   // Populate the training data for the root model
   for (unsigned int i = 0; i < SAMPLE_SZ; ++i) {
-    training_point<T> tp;
-    tp.x = rmi.training_sample[i];
-    tp.y = static_cast<float>(i) / SAMPLE_SZ;
-
-    training_data[0][0].push_back(tp);
+    training_data[0][0].push_back({rmi.training_sample[i], 1. * i / SAMPLE_SZ});
   }
 
   // Train the root model using linear interpolation
   auto *current_training_data = &training_data[0][0];
-  RMI::linear_model *current_model = &rmi.models[0][0];
+  typename RMI<T>::linear_model *current_model = &rmi.models[0][0];
 
   // Find the min and max values in the training set
   training_point<T> min = current_training_data->front();
@@ -398,7 +402,9 @@ learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end,
 }  // end of training function
 
 template <class RandomIt>
-void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
+void _sort_trained(
+    RandomIt begin, RandomIt end,
+    learned_sort::RMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
 
@@ -421,7 +427,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
   // Constants for repeated keys
   const unsigned int EXCEPTION_VEC_INIT_CAPACITY = FANOUT;
   constexpr unsigned int EXC_CNT_THRESHOLD = 60;
-  const size_t TRAINING_SAMPLE_SZ = rmi.training_sample_sz;
+  const size_t TRAINING_SAMPLE_SZ = rmi.training_sample.size();
 
   // Initialize the spill bucket
   vector<T> spill_bucket;
@@ -450,10 +456,10 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
   auto root_slope = rmi.models[0][0].slope;
   auto root_intrcpt = rmi.models[0][0].intercept;
   unsigned int num_models = rmi.hp.arch[1];
-  vector<double> slopes, intercpts;
+  vector<double> slopes, intercepts;
   for (unsigned int i = 0; i < num_models; ++i) {
     slopes.push_back(rmi.models[1][i].slope);
-    intercpts.push_back(rmi.models[1][i].intercept);
+    intercepts.push_back(rmi.models[1][i].intercept);
   }
 
   //----------------------------------------------------------//
@@ -466,7 +472,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
     if (rmi.training_sample[i] == rmi.training_sample[i - 1]) {
       ++cnt_rep_keys;
     } else {  // New values start here. Reset counter. Add value in the
-      // exeception_vals if above threshold
+      // exception_vals if above threshold
       if (cnt_rep_keys > EXC_CNT_THRESHOLD) {
         repeated_keys.push_back(rmi.training_sample[i - 1]);
       }
@@ -477,8 +483,6 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
   if (cnt_rep_keys > EXC_CNT_THRESHOLD) {  // Last batch of repeated keys
     repeated_keys.push_back(rmi.training_sample[TRAINING_SAMPLE_SZ - 1]);
   }
-
-  delete[] rmi.training_sample;
 
   //----------------------------------------------------------//
   //             SHUFFLE THE KEYS INTO BUCKETS                //
@@ -494,7 +498,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
         std::max(0., std::min(num_models - 1.,
                               root_slope * repeated_keys[i] + root_intrcpt)));
     pred_cdf =
-        slopes[pred_model_idx] * repeated_keys[i] + intercpts[pred_model_idx];
+        slopes[pred_model_idx] * repeated_keys[i] + intercepts[pred_model_idx];
     pred_model_idx = static_cast<int>(
         std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
 
@@ -515,7 +519,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
 
       // Predict the CDF
       pred_cdf =
-          slopes[pred_model_idx] * cur_key[0] + intercpts[pred_model_idx];
+          slopes[pred_model_idx] * cur_key[0] + intercepts[pred_model_idx];
 
       // Scale the CDF to the number of buckets
       pred_model_idx = static_cast<int>(
@@ -551,7 +555,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
 
         // Predict the CDF
         pred_cdf = slopes[pred_idx_in_batch_exc[elm_idx]] * cur_key[elm_idx] +
-                   intercpts[pred_idx_in_batch_exc[elm_idx]];
+                   intercepts[pred_idx_in_batch_exc[elm_idx]];
 
         // Extrapolate the CDF to the number of buckets
         pred_idx_in_batch_exc[elm_idx] = static_cast<unsigned int>(
@@ -657,7 +661,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
 
         // Predict the CDF
         pred_cdf = slopes[batch_cache[elm_idx]] * cur_elm +
-                   intercpts[batch_cache[elm_idx]];
+                   intercepts[batch_cache[elm_idx]];
 
         // Scale the predicted CDF to the number of minor buckets and cache it
         batch_cache[elm_idx] = static_cast<int>(std::max(
@@ -702,7 +706,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
       batch_cache[elm_idx] = static_cast<int>(std::max(
           0., std::min(num_models - 1., root_slope * cur_elm + root_intrcpt)));
       pred_cdf = slopes[batch_cache[elm_idx]] * cur_elm +
-                 intercpts[batch_cache[elm_idx]];
+                 intercepts[batch_cache[elm_idx]];
       batch_cache[elm_idx] = static_cast<int>(std::max(
           0., std::min(NUM_MINOR_BCKT_PER_MAJOR_BCKT - 1.,
                        pred_cdf * TOT_NUM_MINOR_BCKTS -
@@ -771,7 +775,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
 
             // Predict the CDF
             pred_cdf = slopes[pred_model_first_elm] * cur_elm +
-                       intercpts[pred_model_first_elm];
+                       intercepts[pred_model_first_elm];
 
             // Scale the predicted CDF to the input size and cache it
             pred_idx_cache[elm_idx] = static_cast<int>(std::max(
@@ -797,7 +801,7 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
                                       root_slope * cur_elm + root_intrcpt)));
             // Predict the CDF
             pred_cdf = slopes[model_idx_next_layer] * cur_elm +
-                       intercpts[model_idx_next_layer];
+                       intercepts[model_idx_next_layer];
 
             // Scale the predicted CDF to the input size and cache it
             pred_idx_cache[elm_idx] = static_cast<unsigned int>(std::max(
@@ -947,15 +951,14 @@ void _sort_trained(RandomIt begin, RandomIt end, learned_sort::RMI &rmi) {
  * architecture and sampling ratio.
  */
 template <class RandomIt>
-void learned_sort::sort(RandomIt begin, RandomIt end, RMI::Params &params) {
+void learned_sort::sort(
+    RandomIt begin, RandomIt end,
+    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &params) {
   // Use std::sort for very small arrays
   if (std::distance(begin, end) <=
       std::max(params.fanout * params.threshold, 5 * params.arch[1])) {
     std::sort(begin, end);
   } else {
-    // Determine the data type
-    typedef typename iterator_traits<RandomIt>::value_type T;
-
     // Train
     RMI rmi = train(begin, end, params);
 
@@ -984,7 +987,7 @@ void learned_sort::sort(RandomIt begin, RandomIt end, RMI::Params &params) {
  */
 template <class RandomIt>
 void learned_sort::sort(RandomIt begin, RandomIt end) {
-  RMI::Params p;
+  typename RMI<typename iterator_traits<RandomIt>::value_type>::Params p;
   learned_sort::sort(begin, end, p);
 }
 
