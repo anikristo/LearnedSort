@@ -188,7 +188,7 @@ template <class RandomIt>
 learned_sort::RMI<typename iterator_traits<RandomIt>::value_type>
 learned_sort::train(
     RandomIt begin, RandomIt end,
-    RMI<typename iterator_traits<RandomIt>::value_type>::Params &p) {
+    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &p) {
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
 
@@ -953,7 +953,7 @@ void _sort_trained(
 template <class RandomIt>
 void learned_sort::sort(
     RandomIt begin, RandomIt end,
-    RMI<typename iterator_traits<RandomIt>::value_type>::Params &params) {
+    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &params) {
   // Use std::sort for very small arrays
   if (std::distance(begin, end) <=
       std::max(params.fanout * params.threshold, 5 * params.arch[1])) {
