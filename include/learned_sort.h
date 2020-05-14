@@ -122,7 +122,7 @@ void sort(
 using namespace learned_sort;
 
 template <class T>
-learned_sort::RMI<T>::Params::Params() {
+RMI<T>::Params::Params() {
   this->batch_sz = DEFAULT_BATCH_SZ;
   this->fanout = DEFAULT_FANOUT;
   this->overallocation_ratio = DEFAULT_OVERALLOCATION_RATIO;
@@ -132,7 +132,7 @@ learned_sort::RMI<T>::Params::Params() {
 }
 
 template <class T>
-learned_sort::RMI<T>::Params::Params(float sampling_rate, float overallocation,
+RMI<T>::Params::Params(float sampling_rate, float overallocation,
                                      unsigned int fanout, unsigned int batch_sz,
                                      unsigned int threshold,
                                      vector<unsigned int> arch) {
@@ -145,7 +145,7 @@ learned_sort::RMI<T>::Params::Params(float sampling_rate, float overallocation,
 }
 
 template <class T>
-learned_sort::RMI<T>::RMI(Params p) {
+RMI<T>::RMI(Params p) {
   this->trained = false;
   this->hp = p;
   this->models.resize(p.arch.size());
@@ -154,8 +154,6 @@ learned_sort::RMI<T>::RMI(Params p) {
     this->models[layer_idx].resize(p.arch[layer_idx]);
   }
 }
-
-using namespace learned_sort;
 
 /**
  * @brief Train a CDF function with an RMI architecture, using linear spline
@@ -185,7 +183,7 @@ using namespace learned_sort;
  * value between [0,1] as a predicted CDF value.
  */
 template <class RandomIt>
-learned_sort::RMI<typename iterator_traits<RandomIt>::value_type>
+RMI<typename iterator_traits<RandomIt>::value_type>
 learned_sort::train(
     RandomIt begin, RandomIt end,
     typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &p) {
@@ -404,7 +402,7 @@ learned_sort::train(
 template <class RandomIt>
 void _sort_trained(
     RandomIt begin, RandomIt end,
-    learned_sort::RMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
+    RMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
 
