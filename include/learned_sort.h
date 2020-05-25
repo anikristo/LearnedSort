@@ -953,7 +953,8 @@ void _sort_trained(
 template <class RandomIt>
 void learned_sort::sort(
     RandomIt begin, RandomIt end,
-    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &params) {
+    typename RMI<typename iterator_traits<RandomIt>::value_type>::Params
+        &params) {
   // Use std::sort for very small arrays
   if (std::distance(begin, end) <=
       std::max(params.fanout * params.threshold, 5 * params.arch[1])) {
