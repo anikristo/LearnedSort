@@ -26,7 +26,7 @@
  */
 
 #define LEARNED_SORT_VERSION_MAJOR 0
-#define LEARNED_SORT_VERSION_MINOR 1
+#define LEARNED_SORT_VERSION_MINOR 2
 
 #include <algorithm>
 #include <cmath>
@@ -287,7 +287,7 @@ learned_sort::train(
 
   // Calculate the slope and intercept terms
   current_model->slope =
-      1 / (max.x - min.x);  // Assuming min.y = 0 and max.y = 1
+      1. / (max.x - min.x);  // Assuming min.y = 0 and max.y = 1
   current_model->intercept = -current_model->slope * min.x;
 
   // Extrapolate for the number of models in the next layer
