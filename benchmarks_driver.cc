@@ -23,13 +23,14 @@
 
 #include "gfx/timsort.hpp"
 #include "ips4o.hpp"
-#include "radix_sort.hh"
 #include "learned_sort.h"
+#include "radix_sort.hh"
 #include "util.h"
 
 using namespace std;
 
 distr_t DATA_DISTR = NORMAL;  // NOTE: You can change the distribution here
+typedef double data_t;
 
 class Benchmarks : public benchmark::Fixture {
  protected:
@@ -38,19 +39,19 @@ class Benchmarks : public benchmark::Fixture {
 
     switch (DATA_DISTR) {
       case NORMAL:
-        arr = normal_distr<double>(size);
+        arr = normal_distr<data_t>(size);
 
       case UNIFORM:
-        arr = uniform_distr<double>(size);
+        arr = uniform_distr<data_t>(size);
 
       case EXPONENTIAL:
-        arr = exponential_distr<double>(size);
+        arr = exponential_distr<data_t>(size);
 
       case LOGNORMAL:
-        arr = lognormal_distr<double>(size);
+        arr = lognormal_distr<data_t>(size);
 
       default:
-        arr = normal_distr<double>(size);
+        arr = normal_distr<data_t>(size);
     }
   }
 
@@ -65,7 +66,7 @@ class Benchmarks : public benchmark::Fixture {
   }
 
   // Input array
-  vector<double> arr;
+  vector<data_t> arr;
 };
 
 BENCHMARK_DEFINE_F(Benchmarks, LearnedSort)
