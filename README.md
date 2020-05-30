@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/learnedsystems/LearnedSort.svg?branch=master)](https://travis-ci.com/learnedsystems/learnedsort)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](LearnedSort_Paper.pdf).
+The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](https://doi.org/10.1145/3318464.3389752).
 
 Example:
 
