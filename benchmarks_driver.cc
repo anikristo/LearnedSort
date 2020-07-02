@@ -40,18 +40,23 @@ class Benchmarks : public benchmark::Fixture {
     switch (DATA_DISTR) {
       case NORMAL:
         arr = normal_distr<data_t>(size);
+        break;
 
       case UNIFORM:
         arr = uniform_distr<data_t>(size);
+        break;
 
       case EXPONENTIAL:
         arr = exponential_distr<data_t>(size);
+        break;
 
       case LOGNORMAL:
         arr = lognormal_distr<data_t>(size);
+        break;
 
       default:
         arr = normal_distr<data_t>(size);
+        break;
     }
   }
 
@@ -120,8 +125,9 @@ BENCHMARK_DEFINE_F(Benchmarks, IS4o)
   state.SetComplexityN(state.range(0));
 }
 
-BENCHMARK_DEFINE_F(Benchmarks, RadixSort)
-(benchmark::State &state) {
+// NOTE:
+// The provided implementation for Radix Sort only works with vector<double>
+BENCHMARK_DEFINE_F(Benchmarks, RadixSort)(benchmark::State &state) {
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
