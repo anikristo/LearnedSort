@@ -40,13 +40,11 @@ static inline unsigned long long f8_sort_IFloatFlip(unsigned long long u) {
 }
 
 void radix_sort(vector<double>::iterator a, vector<double>::iterator b) {
-
   // Tiny test to see if the system is little endian.
   // If not, use std::sort as a fallback.
   unsigned int i = 1;
   char *is_little_endian = (char *)&i;
   if (*is_little_endian) {
-
     // Start Radix Sort
     const long sz = std::distance(a, b);
     long j;
@@ -57,8 +55,7 @@ void radix_sort(vector<double>::iterator a, vector<double>::iterator b) {
                                          *buf2;
     unsigned long *b0, *b1, *b2, *b3, *b4, *b5;
 
-    if (sz < HIST_SIZE)
-      return std::sort(a, b);
+    if (sz < HIST_SIZE) return std::sort(a, b);
 
     buf2 = (unsigned long long *)malloc(sz * sizeof(double));
     b0 = (unsigned long *)calloc(HIST_SIZE * 6, sizeof(unsigned long));
@@ -79,7 +76,6 @@ void radix_sort(vector<double>::iterator a, vector<double>::iterator b) {
     }
 
     for (j = 0; j < HIST_SIZE; j++) {
-
       tsum = b0[j] + sum0;
       b0[j] = sum0 - 1;
       sum0 = tsum;
@@ -151,7 +147,7 @@ void radix_sort(vector<double>::iterator a, vector<double>::iterator b) {
     free(buf2);
     free(b0);
 
-  } else { // The system is big endian, so fall back to std::sort
+  } else {  // The system is big endian, so fall back to std::sort
     std::sort(a, b);
   }
 }
@@ -164,4 +160,10 @@ void radix_sort(vector<double>::iterator a, vector<double>::iterator b) {
 #undef _4
 #undef _5
 
-#endif // RADIX_SORT_HH
+template <class RandomIt>
+void radix_sort(RandomIt a, RandomIt b) {
+  cout << "Radix sort is not implemented for non-double types. Using std::sort." << endl;
+  std::sort(a, b);
+}
+
+#endif  // RADIX_SORT_HH

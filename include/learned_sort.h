@@ -133,9 +133,8 @@ RMI<T>::Params::Params() {
 
 template <class T>
 RMI<T>::Params::Params(float sampling_rate, float overallocation,
-                                     unsigned int fanout, unsigned int batch_sz,
-                                     unsigned int threshold,
-                                     vector<unsigned int> arch) {
+                       unsigned int fanout, unsigned int batch_sz,
+                       unsigned int threshold, vector<unsigned int> arch) {
   this->batch_sz = batch_sz;
   this->fanout = fanout;
   this->overallocation_ratio = overallocation;
@@ -183,8 +182,7 @@ RMI<T>::RMI(Params p) {
  * value between [0,1] as a predicted CDF value.
  */
 template <class RandomIt>
-RMI<typename iterator_traits<RandomIt>::value_type>
-learned_sort::train(
+RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
     RandomIt begin, RandomIt end,
     typename RMI<typename iterator_traits<RandomIt>::value_type>::Params &p) {
   // Determine the data type
@@ -400,9 +398,8 @@ learned_sort::train(
 }  // end of training function
 
 template <class RandomIt>
-void _sort_trained(
-    RandomIt begin, RandomIt end,
-    RMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
+void _sort_trained(RandomIt begin, RandomIt end,
+                   RMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
 
@@ -627,15 +624,18 @@ void _sort_trained(
   // Caches the predicted bucket indices for each element in the batch
   vector<unsigned int> batch_cache(BATCH_SZ, 0);
 
+  // Array to keep track of sizes for the minor buckets in the current
+  // bucket
+  vector<unsigned int> minor_bckt_sizes(NUM_MINOR_BCKT_PER_MAJOR_BCKT, 0);
+
   // Iterate over each major bucket
   for (unsigned int major_bckt_idx = 0; major_bckt_idx < FANOUT;
        ++major_bckt_idx) {
     // Update the bucket start offset
     bckt_start_offset = major_bckt_idx * MAJOR_BCKT_CAPACITY;
 
-    // Array to keep track of sizes for the minor buckets in the current
-    // bucket
-    vector<unsigned int> minor_bckt_sizes(NUM_MINOR_BCKT_PER_MAJOR_BCKT, 0);
+    // Reset minor_bckt_sizes to all zeroes for the current major bucket
+    fill(minor_bckt_sizes.begin(), minor_bckt_sizes.end(), 0);
 
     // Find out the number of batches for this bucket
     unsigned int num_batches = major_bckt_sizes[major_bckt_idx] / BATCH_SZ;

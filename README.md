@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/learnedsystems/LearnedSort.svg?branch=master)](https://travis-ci.com/learnedsystems/learnedsort)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](LearnedSort_Paper.pdf).
+The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](https://doi.org/10.1145/3318464.3389752).
 
 Example:
 
@@ -254,16 +254,22 @@ Refer to the [Issues](https://github.com/learnedsystems/LearnedSort/issues?q=is%
 This work is licensed under the [GNU General Public License v3.0](LICENSE) and any use in academic settings must cite the corresponding paper:
 
 ```bibtex
-@inproceedings {10.1145/3318464.3389752,
-        author =    {Kristo, Ani and Vaidya, Kapil and \c{C}etintemel, U\u{g}ur and Misra, Sanchit and Kraska, Tim},
-        title =     {{The Case for a Learned Sorting Algorithm}},
-        year =      {2020},
-        isbn =      {97814503673562006},
-        publisher = {Association for Computing Machinery},
-        address =   {New York, NY, USA},
-        url =       {https://doi.org/10.1145/3318464.3389752},
-        booktitle = {{Proceedings of the 2020 ACM SIGMOD International Conference on Management of data}},
-        location =  {Portland, OR, USA},
-        series =    {SIGMOD ’20}
-    }
+@inproceedings{10.1145/3318464.3389752,
+    author = {Kristo, Ani and Vaidya, Kapil and \c{C}etintemel, Ugur and Misra, Sanchit and Kraska, Tim},
+    title = {The Case for a Learned Sorting Algorithm},
+    year = {2020},
+    isbn = {9781450367356},
+    publisher = {International Foundation for Autonomous Agents and Multiagent Systems},
+    address = {Richland, SC},
+    url = {https://doi.org/10.1145/3318464.3389752},
+    doi = {10.1145/3318464.3389752},
+    booktitle = {Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data},
+    pages = {1001–1016},
+    numpages = {16},
+    location = {Portland, OR, USA},
+    series = {SIGMOD ’20}
+}
+  
+
+
 ```
