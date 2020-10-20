@@ -204,8 +204,8 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
          << RMI<T>::Params::DEFAULT_FANOUT << ")." << endl;
   }
 
-  if (p.overallocation_ratio <= 0) {
-    p.overallocation_ratio = 1;
+  if (p.overallocation_ratio <= 1) {
+    p.overallocation_ratio = RMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO;
     cerr << "\33[93;1mWARNING\33[0m: Invalid overallocation ratio. Using "
             "default ("
          << RMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO << ")." << endl;
