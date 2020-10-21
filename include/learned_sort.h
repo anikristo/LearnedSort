@@ -611,13 +611,9 @@ void _sort_trained(RandomIt begin, RandomIt end,
 
   unsigned int NUM_MINOR_BCKT_PER_MAJOR_BCKT = std::max(
       1u, static_cast<unsigned>(MAJOR_BCKT_CAPACITY * OA_RATIO / THRESHOLD));
+  const unsigned int TOT_NUM_MINOR_BCKTS = NUM_MINOR_BCKT_PER_MAJOR_BCKT * FANOUT; 
 
-  const unsigned int ARR_SZ_MINOR_BCKTS =
-      static_cast<int>(MAJOR_BCKT_CAPACITY * OA_RATIO) + 1;
-  const unsigned int TOT_NUM_MINOR_BCKTS =
-      std::ceil(static_cast<int>(OA_RATIO * INPUT_SZ) / THRESHOLD);
-
-  vector<T> minor_bckts(ARR_SZ_MINOR_BCKTS);
+  vector<T> minor_bckts(NUM_MINOR_BCKT_PER_MAJOR_BCKT * THRESHOLD);
 
   // Stores the index where the current bucket will start
   int bckt_start_offset = 0;
@@ -711,9 +707,7 @@ void _sort_trained(RandomIt begin, RandomIt end,
                            major_bckt_idx * NUM_MINOR_BCKT_PER_MAJOR_BCKT)));
     }
 
-    for (unsigned elm_idx = 0;
-         elm_idx < major_bckt_sizes[major_bckt_idx] - num_batches * BATCH_SZ;
-         ++elm_idx) {
+    for (unsigned elm_idx = 0; elm_idx < num_remaining_elm; ++elm_idx) {
       auto cur_elm = major_bckts[bckt_start_offset + elm_idx];
       if (minor_bckt_sizes[batch_cache[elm_idx]] < THRESHOLD) {
         minor_bckts[THRESHOLD * batch_cache[elm_idx] +
@@ -868,7 +862,7 @@ void _sort_trained(RandomIt begin, RandomIt end,
 
   vector<T> linear_vals, linear_count;
 
-  for (auto val_idx = 0; val_idx < 1000; ++val_idx) {
+  for (auto val_idx = 0; val_idx < EXCEPTION_VEC_INIT_CAPACITY; ++val_idx) {
     for (size_t exc_elm_idx = 0;
          exc_elm_idx < repeated_keys_predicted_ranks[val_idx].size();
          ++exc_elm_idx) {
