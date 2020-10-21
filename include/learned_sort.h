@@ -862,7 +862,7 @@ void _sort_trained(RandomIt begin, RandomIt end,
 
   vector<T> linear_vals, linear_count;
 
-  for (auto val_idx = 0; val_idx < 1000; ++val_idx) {
+  for (auto val_idx = 0; val_idx < EXCEPTION_VEC_INIT_CAPACITY; ++val_idx) {
     for (size_t exc_elm_idx = 0;
          exc_elm_idx < repeated_keys_predicted_ranks[val_idx].size();
          ++exc_elm_idx) {
