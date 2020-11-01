@@ -25,8 +25,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define LEARNED_SORT_VERSION_MAJOR 0
-#define LEARNED_SORT_VERSION_MINOR 2
+#define LEARNED_SORT_VERSION_MAJOR 1
+#define LEARNED_SORT_VERSION_MINOR 1
 
 #include <algorithm>
 #include <cmath>
@@ -283,9 +283,8 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
   training_point<T> min = current_training_data->front();
   training_point<T> max = current_training_data->back();
 
-  // Calculate the slope and intercept terms
-  current_model->slope =
-      1. / (max.x - min.x);  // Assuming min.y = 0 and max.y = 1
+  // Calculate the slope and intercept terms, assuming min.y = 0 and max.y
+  current_model->slope = 1. / (max.x - min.x);
   current_model->intercept = -current_model->slope * min.x;
 
   // Extrapolate for the number of models in the next layer
@@ -331,8 +330,8 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
         min = current_training_data->front();
         max = current_training_data->back();
 
-        current_model->slope =
-            (max.y) / (max.x - min.x);  // Hallucinating as if min.y = 0
+        // Hallucinating as if min.y = 0
+        current_model->slope = (1. * max.y) / (max.x - min.x);
         current_model->intercept = min.y - current_model->slope * min.x;
       }
     } else if (model_idx == p.arch[1] - 1) {
@@ -346,8 +345,8 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
         min = training_data[1][model_idx - 1].back();
         max = current_training_data->back();
 
-        current_model->slope =
-            (min.y - 1) / (min.x - max.x);  // Hallucinating as if max.y = 1
+        // Hallucinating as if max.y = 1
+        current_model->slope = (1. - min.y) / (max.x - min.x);
         current_model->intercept = min.y - current_model->slope * min.x;
       }
     } else {  // The current model is not the first model in the current layer
@@ -375,7 +374,7 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
         min = training_data[1][model_idx - 1].back();
         max = current_training_data->back();
 
-        current_model->slope = (min.y - max.y) / (min.x - max.x);
+        current_model->slope = (max.y - min.y) / (max.x - min.x);
         current_model->intercept = min.y - current_model->slope * min.x;
       }
     }
