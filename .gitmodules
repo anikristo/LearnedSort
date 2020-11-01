@@ -1,6 +1,6 @@
 [submodule "third_party/ips4o"]
 	path = third_party/ips4o
-	url = https://github.com/SaschaWitt/ips4o.git
+	url = https://github.com/ips4o/ips4o.git
 [submodule "third_party/googlebenchmark"]
 	path = third_party/googlebenchmark
 	url = https://github.com/google/benchmark/
