@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+NUM_CPUS=`nproc`
 
 cd ${DIR}
 
@@ -12,5 +13,5 @@ mkdir build
 fi
 cd build
 cmake ..
-make -j4
+make -j${NUM_CPUS}
 cd ..
