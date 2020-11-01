@@ -13,7 +13,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 
 # Dependencies
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ips4o/include)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/ips4o)
 add_subdirectory(third_party/googletest)
 add_subdirectory(third_party/googlebenchmark)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/radix)
