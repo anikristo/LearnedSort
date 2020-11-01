@@ -13,3 +13,12 @@
 [submodule "third_party/gtest-parallel"]
 	path = third_party/gtest-parallel
 	url = https://github.com/google/gtest-parallel.git
+[submodule "third_party/BlockQuicksort"]
+	path = third_party/BlockQuicksort
+	url = https://github.com/ips4o/BlockQuicksort.git
+[submodule "third_party/pdqsort"]
+	path = third_party/pdqsort
+	url = https://github.com/orlp/pdqsort
+[submodule "third_party/ska_sort"]
+	path = third_party/ska_sort
+	url = https://github.com/skarupke/ska_sort.git

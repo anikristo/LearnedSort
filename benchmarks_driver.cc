@@ -21,10 +21,13 @@
 
 #include <algorithm>
 
+#include "blocked_double_pivot_check_mosqrt.h++"
 #include "gfx/timsort.hpp"
 #include "ips4o.hpp"
 #include "learned_sort.h"
+#include "pdqsort.h"
 #include "radix_sort.hh"
+#include "ska_sort.hpp"
 #include "util.h"
 
 using namespace std;
@@ -180,12 +183,62 @@ BENCHMARK_DEFINE_F(Benchmarks, Timsort)
   state.SetComplexityN(state.range(0));
 }
 
+BENCHMARK_DEFINE_F(Benchmarks, BlockQuicksort)
+(benchmark::State &state) {
+  for (auto _ : state) {
+    // Re-shuffle
+    state.PauseTiming();
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(arr.begin(), arr.end(), g);
+    state.ResumeTiming();
+
+    // Sort
+    blocked_double_pivot_check_mosqrt::sort(arr);
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+
+BENCHMARK_DEFINE_F(Benchmarks, PDQS)
+(benchmark::State &state) {
+  for (auto _ : state) {
+    // Re-shuffle
+    state.PauseTiming();
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(arr.begin(), arr.end(), g);
+    state.ResumeTiming();
+
+    // Sort
+    pdqsort(arr.begin(), arr.end());
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+
+BENCHMARK_DEFINE_F(Benchmarks, SkaSort)
+(benchmark::State &state) {
+  for (auto _ : state) {
+    // Re-shuffle
+    state.PauseTiming();
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(arr.begin(), arr.end(), g);
+    state.ResumeTiming();
+
+    // Sort
+    ska_sort(arr.begin(), arr.end());
+  }
+
+  state.SetComplexityN(state.range(0));
+}
+
 static void benchmark_arguments(benchmark::internal::Benchmark *b) {
   // Set input size parameter
   b->Arg(1E6);  // 1M
   b->Arg(1E7);  // 10M
   b->Arg(1E8);  // 100M
-  b->Arg(1E9);  // 1B
 
   // Set time measurement unit
   b->Unit(benchmark::kMillisecond);
@@ -204,6 +257,15 @@ BENCHMARK_REGISTER_F(Benchmarks, StdSort)
     ->Apply(benchmark_arguments)
     ->Complexity(benchmark::BigO::oNLogN);
 BENCHMARK_REGISTER_F(Benchmarks, Timsort)
+    ->Apply(benchmark_arguments)
+    ->Complexity(benchmark::BigO::oNLogN);
+BENCHMARK_REGISTER_F(Benchmarks, BlockQuicksort)
+    ->Apply(benchmark_arguments)
+    ->Complexity(benchmark::BigO::oNLogN);
+BENCHMARK_REGISTER_F(Benchmarks, PDQS)
+    ->Apply(benchmark_arguments)
+    ->Complexity(benchmark::BigO::oNLogN);
+BENCHMARK_REGISTER_F(Benchmarks, SkaSort)
     ->Apply(benchmark_arguments)
     ->Complexity(benchmark::BigO::oNLogN);
 

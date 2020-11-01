@@ -18,6 +18,9 @@ add_subdirectory(third_party/googletest)
 add_subdirectory(third_party/googlebenchmark)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/radix)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cpp-TimSort/include)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/BlockQuicksort)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/pdqsort)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/ska_sort)
 
 # Learned Sort library
 include_directories(${PROJECT_SOURCE_DIR}/include)
