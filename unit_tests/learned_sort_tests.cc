@@ -48,7 +48,7 @@ TEST(LS_SORT_TEST, StdNormal) {
 
 TEST(LS_SORT_TEST, Lognormal) {
   // Generate random input
-  auto arr = lognormal_distr<double>(TEST_SIZE, 0, 2);
+  auto arr = lognormal_distr<double>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
@@ -65,7 +65,7 @@ TEST(LS_SORT_TEST, Lognormal) {
 
 TEST(LS_SORT_TEST, UniformReal) {
   // Generate random input
-  auto arr = uniform_distr<double>(TEST_SIZE, -100, 500);
+  auto arr = uniform_distr<double>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
@@ -82,7 +82,126 @@ TEST(LS_SORT_TEST, UniformReal) {
 
 TEST(LS_SORT_TEST, UniformInt) {
   // Generate random input
-  auto arr = uniform_distr<int>(TEST_SIZE, -1000, 200000);
+  auto arr = uniform_distr<int>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, UniformLong) {
+  // Generate random input
+  auto arr = uniform_distr<long>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, UniformUnsignedLong) {
+  // Generate random input
+  auto arr = uniform_distr<unsigned long>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, RootDups) {
+  // Generate random input
+  auto arr = root_dups_distr<double>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, TwoDups) {
+  // Generate random input
+  auto arr = two_dups_distr<double>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, EightDups) {
+  // Generate random input
+  auto arr = eight_dups_distr<double>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, Sorted) {
+  // Generate random input
+  auto arr = sorted_uniform_distr<double>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, ReverseSorted) {
+  // Generate random input
+  auto arr = reverse_sorted_uniform_distr<double>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);

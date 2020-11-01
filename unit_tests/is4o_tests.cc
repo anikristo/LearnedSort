@@ -28,59 +28,26 @@ extern size_t TEST_SIZE;
 
 using namespace std;
 
-TEST(IS4o_TEST, StdNormal) {
-  // Generate random input
-  auto arr = normal_distr<double>(TEST_SIZE);
-
-  // Calculate the checksum
-  auto cksm = get_checksum(arr);
-
-  // Sort
-  ips4o::sort(arr.begin(), arr.end());
-
-  // Test that it is sorted
-  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
-
-  // Test that the checksum is the same
-  ASSERT_EQ(cksm, get_checksum(arr));
-}
-
-TEST(IS4o_TEST, Lognormal) {
-  auto arr = lognormal_distr<double>(TEST_SIZE, 0, 2);
-
-  // Calculate the checksum
-  auto cksm = get_checksum(arr);
-
-  // Sort
-  ips4o::sort(arr.begin(), arr.end());
-
-  // Test that it is sorted
-  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
-
-  // Test that the checksum is the same
-  ASSERT_EQ(cksm, get_checksum(arr));
-}
-
-TEST(IS4o_TEST, UniformReal) {
-  // Generate random input
-  auto arr = uniform_distr<double>(TEST_SIZE, -100, 500);
-
-  // Calculate the checksum
-  auto cksm = get_checksum(arr);
-
-  // Sort
-  ips4o::sort(arr.begin(), arr.end());
-
-  // Test that it is sorted
-  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
-
-  // Test that the checksum is the same
-  ASSERT_EQ(cksm, get_checksum(arr));
-}
-
 TEST(IS4o_TEST, UniformInt) {
   // Generate random input
-  auto arr = uniform_distr<int>(TEST_SIZE, -1000, 200000);
+  auto arr = uniform_distr<int>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  ips4o::sort(arr.begin(), arr.end());
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+}
+
+TEST(IS4o_TEST, UniformUnsignedLong) {
+  // Generate random input
+  auto arr = uniform_distr<unsigned long>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);

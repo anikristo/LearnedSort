@@ -29,40 +29,6 @@ using namespace std;
 
 extern size_t TEST_SIZE;
 
-TEST(RADIX_SORT_TEST, StdNormal) {
-  // Generate random input
-  auto arr = normal_distr<double>(TEST_SIZE);
-
-  // Calculate the checksum
-  auto cksm = get_checksum(arr);
-
-  // Sort
-  radix_sort(arr.begin(), arr.end());
-
-  // Test that it is sorted
-  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
-
-  // Test that the checksum is the same
-  ASSERT_EQ(cksm, get_checksum(arr));
-}
-
-TEST(RADIX_SORT_TEST, Lognormal) {
-  // Generate random input
-  auto arr = lognormal_distr<double>(TEST_SIZE, 0, 2);
-
-  // Calculate the checksum
-  auto cksm = get_checksum(arr);
-
-  // Sort
-  radix_sort(arr.begin(), arr.end());
-
-  // Test that it is sorted
-  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
-
-  // Test that the checksum is the same
-  ASSERT_EQ(cksm, get_checksum(arr));
-}
-
 TEST(RADIX_SORT_TEST, UniformReal) {
   // Generate random input
   auto arr = normal_distr<double>(TEST_SIZE, -100, 500);
