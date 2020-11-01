@@ -5,7 +5,7 @@
  * @file util.h
  * @author Ani Kristo (anikristo@gmail.com)
  * @brief Shared util functions for benchmarks and tests
- * 
+ *
  * @copyright Copyright (c) 2020 Ani Kristo (anikristo@gmail.com)
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,19 +20,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "util.h"
-#include <vector>
+#include <iostream>
 #include <random>
+#include <vector>
 
 using namespace std;
 
 // An enumeration of data distribution types to generate for the benchmarks.
-enum distr_t
-{
-    NORMAL,
-    UNIFORM,
-    EXPONENTIAL,
-    LOGNORMAL
+enum distr_t {
+  NORMAL,
+  UNIFORM,
+  EXPONENTIAL,
+  LOGNORMAL,
+  ROOT_DUPS,
+  TWO_DUPS,
+  EIGHT_DUPS,
+  SORTED_UNIFORM,
+  REVERSE_SORTED_UNIFORM,
 };
 
 // Helper table for hash values for the checksum function
@@ -69,110 +73,174 @@ static constexpr unsigned short crc_table[256] = {
 
 // CRC32 checksum calculation
 template <class T>
-long long int get_checksum(vector<T> arr)
-{
+long long int get_checksum(vector<T> arr) {
+  constexpr auto BYTE_SZ = 8;
+  constexpr auto BYTE_MASK = 0xFF;
 
-    constexpr auto BYTE_SZ = 8;
-    constexpr auto BYTE_MASK = 0xFF;
+  long long int total_checksum = 0, local_checksum = 0;
+  long long int temp;
 
-    long long int total_checksum = 0, local_checksum = 0;
-    long long int temp;
+  vector<T> cpy(arr.begin(), arr.end());
 
-    vector<T> cpy(arr.begin(), arr.end());
-
-    for (size_t i = 0; i < arr.size(); i++)
-    {
-
-        for (size_t j = 0; j < sizeof(T); j++)
-        {
-            temp = ((short)(((char *)(cpy.data() + i))[j])++ ^
-                    (local_checksum >> BYTE_SZ)) &
-                   BYTE_MASK;
-            local_checksum = crc_table[temp] ^ (local_checksum << BYTE_SZ);
-        }
-        total_checksum += local_checksum;
-        local_checksum = 0;
+  for (size_t i = 0; i < arr.size(); i++) {
+    for (size_t j = 0; j < sizeof(T); j++) {
+      temp = ((short)(((char *)(cpy.data() + i))[j])++ ^
+              (local_checksum >> BYTE_SZ)) &
+             BYTE_MASK;
+      local_checksum = crc_table[temp] ^ (local_checksum << BYTE_SZ);
     }
-    return total_checksum;
+    total_checksum += local_checksum;
+    local_checksum = 0;
+  }
+  return total_checksum;
 }
 
 //-----------------------------------------------------------------------//
 //                      Synthetic data generators                        //
 //-----------------------------------------------------------------------//
-template<class T>
-vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1)
-{
+template <class T>
+vector<T> normal_distr(size_t size, double mean = 1 << 12,
+                       double stddev = 1 << 10) {
+  vector<T> arr;
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  normal_distribution<> distribution(mean, stddev);
 
-    vector<T> arr;
-    // Initialize random engine with normal distribution
-    random_device rd;
-    mt19937 generator(rd());
-    normal_distribution<> distribution(mean, stddev);
+  // Populate the input
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator));
+  }
 
-    // Populate the input
-    for (size_t i = 0; i < size; i++)
-    {
-        arr.push_back(distribution(generator));
-    }
-
-    return arr;
+  return arr;
 }
 
-template<class T>
-vector<T> uniform_distr(size_t size, double a = 0, double b = 1)
-{
+template <class T>
+vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
+  if (a == 0 && b == -1) b = size;
+  vector<T> arr;
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  uniform_real_distribution<> distribution(a, b);
 
-    vector<T> arr;
-    // Initialize random engine with normal distribution
-    random_device rd;
-    mt19937 generator(rd());
-    uniform_real_distribution<> distribution(a, b);
+  // Populate the input
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator));
+  }
 
-    // Populate the input
-    for (size_t i = 0; i < size; i++)
-    {
-        arr.push_back(distribution(generator));
-    }
-
-    return arr;
+  return arr;
 }
 
-template<class T>
-vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 1e6)
-{
+template <class T>
+vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
+  if (scale <= 0) scale = size / lambda;
+  vector<T> arr;
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  exponential_distribution<> distribution(lambda);
 
-    vector<T> arr;
-    // Initialize random engine with normal distribution
-    random_device rd;
-    mt19937 generator(rd());
-    exponential_distribution<> distribution(lambda);
+  // Populate the input
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator) * scale);
+  }
 
-    // Populate the input
-    for (size_t i = 0; i < size; i++)
-    {
-        arr.push_back(distribution(generator) * scale);
-    }
-
-    return arr;
+  return arr;
 }
 
-template<class T>
-vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1, double scale = 1e6)
-{
+template <class T>
+vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1,
+                          double scale = 1e6) {
+  vector<T> arr;
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  lognormal_distribution<> distribution(mean, stddev);
 
-    vector<T> arr;
-    // Initialize random engine with normal distribution
-    random_device rd;
-    mt19937 generator(rd());
-    lognormal_distribution<> distribution(mean, stddev);
+  // Populate the input
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator) * scale);
+  }
 
-    // Populate the input
-    for (size_t i = 0; i < size; i++)
-    {
-        arr.push_back(distribution(generator) * scale);
-    }
-
-    return arr;
+  return arr;
 }
 
-#endif // UTIL_H
+template <class T>
+vector<T> root_dups_distr(size_t size) {
+  vector<T> arr;
+
+  // Populate the input
+  const size_t root = std::sqrt(size);
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(i % root);
+  }
+
+  return arr;
+}
+
+template <class T>
+vector<T> two_dups_distr(size_t size) {
+  vector<T> arr;
+  T term = (size / 2) % size;
+
+  for (size_t i = 0; i < size; ++i) {
+    arr.push_back(i * i + term);
+  }
+
+  return arr;
+}
+
+template <class T>
+vector<T> eight_dups_distr(size_t size) {
+  vector<T> arr;
+  T term = (size / 2) % size;
+
+  for (size_t i = 0; i < size; ++i) {
+    arr.push_back(pow(i, 8) + term);
+  }
+
+  return arr;
+}
+
+template <class T>
+vector<T> sorted_uniform_distr(size_t size, double a = 0, double b = -1) {
+  if (a == 0 && b == -1) b = size;
+  vector<T> arr;
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  uniform_real_distribution<> distribution(a, b);
+
+  // Populate the input
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator));
+  }
+
+  std::sort(arr.begin(), arr.end());
+
+  return arr;
+}
+
+template <class T>
+vector<T> reverse_sorted_uniform_distr(size_t size, double a = 0,
+                                       double b = -1) {
+  if (a == 0 && b == -1) b = size;
+  vector<T> arr;
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  uniform_real_distribution<> distribution(a, b);
+
+  // Populate the input
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator));
+  }
+
+  std::sort(arr.begin(), arr.end());
+  std::reverse(arr.begin(), arr.end());
+
+  return arr;
+}
+
+#endif  // UTIL_H

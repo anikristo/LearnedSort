@@ -29,7 +29,7 @@
 
 using namespace std;
 
-distr_t DATA_DISTR = NORMAL;  // NOTE: You can change the distribution here
+distr_t DATA_DISTR = UNIFORM;  // NOTE: You can change the distribution here
 typedef double data_t;
 
 class Benchmarks : public benchmark::Fixture {
@@ -52,6 +52,26 @@ class Benchmarks : public benchmark::Fixture {
 
       case LOGNORMAL:
         arr = lognormal_distr<data_t>(size);
+        break;
+
+      case ROOT_DUPS:
+        arr = root_dups_distr<data_t>(size);
+        break;
+
+      case TWO_DUPS:
+        arr = two_dups_distr<data_t>(size);
+        break;
+
+      case EIGHT_DUPS:
+        arr = eight_dups_distr<data_t>(size);
+        break;
+
+      case SORTED_UNIFORM:
+        arr = sorted_uniform_distr<data_t>(size);
+        break;
+
+      case REVERSE_SORTED_UNIFORM:
+        arr = reverse_sorted_uniform_distr<data_t>(size);
         break;
 
       default:
