@@ -32,13 +32,10 @@
 #include <cmath>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <vector>
 
-using std::iterator_traits;
-using std::vector;
-
-using std::cerr;
-using std::endl;
+using namespace std;
 
 namespace learned_sort {
 
@@ -261,8 +258,14 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
   // Sort the sample using the provided comparison function
   std::sort(rmi.training_sample.begin(), rmi.training_sample.end());
 
-  // Stop early if the array is identical
-  if (rmi.training_sample.front() == rmi.training_sample.back()) {
+  // Count the number of unique keys
+  auto sample_cpy = rmi.training_sample;
+  auto num_unique_elms = std::distance(
+      sample_cpy.begin(), std::unique(sample_cpy.begin(), sample_cpy.end()));
+
+  // Stop early if the array has very few unique values. We need at least 2
+  // unique training examples per leaf model.
+  if (num_unique_elms < 2 * p.arch[1]) {
     return rmi;
   }
 
@@ -311,11 +314,11 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
     current_model = &rmi.models[1][model_idx];
 
     // Interpolate the min points in the training buckets
-    if (model_idx ==
-        0) {  // The current model is the first model in the current layer
+    if (model_idx == 0) {
+      // The current model is the first model in the current layer
 
-      if (current_training_data->size() <
-          2) {  // Case 1: The first model in this layer is empty
+      if (current_training_data->size() < 2) {
+        // Case 1: The first model in this layer is empty
         current_model->slope = 0;
         current_model->intercept = 0;
 
@@ -325,7 +328,8 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
         tp.x = 0;
         tp.y = 0;
         current_training_data->push_back(tp);
-      } else {  // Case 2: The first model in this layer is not empty
+      } else {
+        // Case 2: The first model in this layer is not empty
 
         min = current_training_data->front();
         max = current_training_data->back();
@@ -335,12 +339,13 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
         current_model->intercept = min.y - current_model->slope * min.x;
       }
     } else if (model_idx == p.arch[1] - 1) {
-      if (current_training_data
-              ->empty()) {  // Case 3: The final model in this layer is empty
+      if (current_training_data->empty()) {
+        // Case 3: The final model in this layer is empty
 
         current_model->slope = 0;
         current_model->intercept = 1;
-      } else {  // Case 4: The last model in this layer is not empty
+      } else {
+        // Case 4: The last model in this layer is not empty
 
         min = training_data[1][model_idx - 1].back();
         max = current_training_data->back();
@@ -349,11 +354,11 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
         current_model->slope = (1. - min.y) / (max.x - min.x);
         current_model->intercept = min.y - current_model->slope * min.x;
       }
-    } else {  // The current model is not the first model in the current layer
+    } else {
+      // The current model is not the first model in the current layer
 
-      if (current_training_data
-              ->empty()) {  // Case 5: The intermediate model in
-        // this layer is empty
+      if (current_training_data->empty()) {
+        // Case 5: The intermediate model in this layer is empty
         current_model->slope = 0;
         current_model->intercept =
             training_data[1][model_idx - 1].back().y;  // If the previous model
@@ -369,7 +374,8 @@ RMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
         tp.x = training_data[1][model_idx - 1].back().x;
         tp.y = training_data[1][model_idx - 1].back().y;
         current_training_data->push_back(tp);
-      } else {  // Case 6: The intermediate leaf model is not empty
+      } else {
+        // Case 6: The intermediate leaf model is not empty
 
         min = training_data[1][model_idx - 1].back();
         max = current_training_data->back();
@@ -419,9 +425,8 @@ void _sort_trained(RandomIt begin, RandomIt end,
   const unsigned int MAJOR_BCKT_CAPACITY = INPUT_SZ / FANOUT;
 
   // Constants for repeated keys
-  const unsigned int EXCEPTION_VEC_INIT_CAPACITY = FANOUT;
-  constexpr unsigned int EXC_CNT_THRESHOLD = 60;
   const size_t TRAINING_SAMPLE_SZ = rmi.training_sample.size();
+  const size_t REP_CNT_THRESHOLD = TRAINING_SAMPLE_SZ / rmi.hp.arch[1];
 
   // Initialize the spill bucket
   vector<T> spill_bucket;
@@ -432,19 +437,19 @@ void _sort_trained(RandomIt begin, RandomIt end,
   // Array to keep track of the major bucket sizes
   vector<unsigned int> major_bckt_sizes(FANOUT, 0);
 
-  // Initialize the exception lists for handling repeated keys
-  vector<T> repeated_keys;  // Stores the heavily repeated key values
-  vector<vector<T>> repeated_keys_predicted_ranks(
-      EXCEPTION_VEC_INIT_CAPACITY);  // Stores the predicted ranks of each
-                                     // repeated
-                                     // key
-  vector<vector<T>> repeated_key_counts(
-      EXCEPTION_VEC_INIT_CAPACITY);  // Stores the count of repeated keys
-  unsigned int total_repeated_keys = 0;
+  // Stores the repeated keys detected during training
+  vector<T> rep_keys_in_training;
+
+  // Stores the keys that are repeated above the given threshold, and the count
+  // of how many times they are repeated in the input
+  map<T, size_t> rep_keys;
+
+  // Stores the total number of repeated keys in the input (aka non-unique keys)
+  unsigned int num_rep_keys = 0;
 
   // Counts the nubmer of total elements that are in the buckets, hence
   // INPUT_SZ - spill_bucket.size() at the end of the recursive bucketization
-  unsigned int num_tot_elms_in_bckts = 0;
+  unsigned int num_elms_in_bckts = 0;
 
   // Cache the model parameters
   auto root_slope = rmi.models[0][0].slope;
@@ -465,140 +470,106 @@ void _sort_trained(RandomIt begin, RandomIt end,
   for (size_t i = 1; i < TRAINING_SAMPLE_SZ; i++) {
     if (rmi.training_sample[i] == rmi.training_sample[i - 1]) {
       ++cnt_rep_keys;
-    } else {  // New values start here. Reset counter. Add value in the
-      // exception_vals if above threshold
-      if (cnt_rep_keys > EXC_CNT_THRESHOLD) {
-        repeated_keys.push_back(rmi.training_sample[i - 1]);
+    } else {
+      // New values start here. Reset counter. Add value in the
+      // rep_keys_in_training if above threshold
+      if (cnt_rep_keys > REP_CNT_THRESHOLD) {
+        rep_keys_in_training.push_back(rmi.training_sample[i - 1]);
       }
       cnt_rep_keys = 1;
     }
   }
 
-  if (cnt_rep_keys > EXC_CNT_THRESHOLD) {  // Last batch of repeated keys
-    repeated_keys.push_back(rmi.training_sample[TRAINING_SAMPLE_SZ - 1]);
+  if (cnt_rep_keys > REP_CNT_THRESHOLD) {
+    // Accounting for the last iter in the for-loop above
+    rep_keys_in_training.push_back(rmi.training_sample[TRAINING_SAMPLE_SZ - 1]);
   }
 
   //----------------------------------------------------------//
   //             SHUFFLE THE KEYS INTO BUCKETS                //
   //----------------------------------------------------------//
 
-  // For each spike value, predict the bucket.
-  // In repeated_keys_predicted_ranks[predicted_bucket_idx] save the value, in
-  // repeated_keys_predicted_ranks[predicted_bucket_idx] save the counts
-  int pred_model_idx = 0;
+  // For each repeated key that was found in the training sample, predict the
+  // bucket. Save the repeated keys and counts in rep_keys
+  int pred_rank = 0;
   double pred_cdf = 0.;
-  for (size_t i = 0; i < repeated_keys.size(); ++i) {
-    pred_model_idx = static_cast<int>(
-        std::max(0., std::min(num_models - 1.,
-                              root_slope * repeated_keys[i] + root_intrcpt)));
-    pred_cdf =
-        slopes[pred_model_idx] * repeated_keys[i] + intercepts[pred_model_idx];
-    pred_model_idx = static_cast<int>(
+  for (size_t elm_idx = 0; elm_idx < rep_keys_in_training.size(); ++elm_idx) {
+    pred_rank = static_cast<int>(std::max(
+        0.,
+        std::min(num_models - 1.,
+                 root_slope * rep_keys_in_training[elm_idx] + root_intrcpt)));
+    pred_cdf = slopes[pred_rank] * rep_keys_in_training[elm_idx] +
+               intercepts[pred_rank];
+    pred_rank = static_cast<int>(
         std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
 
-    repeated_keys_predicted_ranks[pred_model_idx].push_back(repeated_keys[i]);
-    repeated_key_counts[pred_model_idx].push_back(0);
+    rep_keys.emplace(rep_keys_in_training[elm_idx], 0);
   }
 
-  if (repeated_keys.size() ==
-      0) {  // No significantly repeated keys in the sample
-    pred_model_idx = 0;
+  if (rep_keys_in_training.size() == 0) {
+    // No significantly repeated keys in the sample
+    pred_rank = 0;
 
     // Process each key in order
     for (auto cur_key = begin; cur_key < end; ++cur_key) {
       // Predict the model idx in the leaf layer
-      pred_model_idx = static_cast<int>(std::max(
+      pred_rank = static_cast<int>(std::max(
           0.,
           std::min(num_models - 1., root_slope * cur_key[0] + root_intrcpt)));
 
       // Predict the CDF
-      pred_cdf =
-          slopes[pred_model_idx] * cur_key[0] + intercepts[pred_model_idx];
+      pred_cdf = slopes[pred_rank] * cur_key[0] + intercepts[pred_rank];
 
       // Scale the CDF to the number of buckets
-      pred_model_idx = static_cast<int>(
+      pred_rank = static_cast<int>(
           std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
 
-      if (major_bckt_sizes[pred_model_idx] <
+      if (major_bckt_sizes[pred_rank] <
           MAJOR_BCKT_CAPACITY) {  // The predicted bucket is not full
-        major_bckts[MAJOR_BCKT_CAPACITY * pred_model_idx +
-                    major_bckt_sizes[pred_model_idx]] = cur_key[0];
+        major_bckts[MAJOR_BCKT_CAPACITY * pred_rank +
+                    major_bckt_sizes[pred_rank]] = cur_key[0];
 
         // Update the bucket size
-        ++major_bckt_sizes[pred_model_idx];
+        ++major_bckt_sizes[pred_rank];
       } else {  // The predicted bucket is full, place in the spill bucket
         spill_bucket.push_back(cur_key[0]);
       }
     }
   } else {  // There are many repeated keys in the sample
 
-    // Batch size for exceptions
-    static constexpr unsigned int BATCH_SZ_EXP = 100;
+    // Process each element in the batch and save their predicted indices
+    for (auto cur_key = begin; cur_key < end; ++cur_key) {
+      // Predict the model idx in the leaf layer
+      pred_rank = static_cast<int>(std::max(
+          0.,
+          std::min(num_models - 1., root_slope * cur_key[0] + root_intrcpt)));
 
-    // Stores the predicted bucket for each input key in the current batch
-    unsigned int pred_idx_in_batch_exc[BATCH_SZ_EXP] = {0};
+      // Predict the CDF
+      pred_cdf = slopes[pred_rank] * cur_key[0] + intercepts[pred_rank];
 
-    // Process elements in batches of size BATCH_SZ_EXP
-    for (auto cur_key = begin; cur_key < end; cur_key += BATCH_SZ_EXP) {
-      // Process each element in the batch and save their predicted indices
-      for (unsigned int elm_idx = 0; elm_idx < BATCH_SZ_EXP; ++elm_idx) {
-        // Predict the leaf model idx
-        pred_idx_in_batch_exc[elm_idx] = static_cast<int>(std::max(
-            0., std::min(num_models - 1.,
-                         root_slope * cur_key[elm_idx] + root_intrcpt)));
+      // Scale the CDF to the number of buckets
+      pred_rank = static_cast<int>(
+          std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
 
-        // Predict the CDF
-        pred_cdf = slopes[pred_idx_in_batch_exc[elm_idx]] * cur_key[elm_idx] +
-                   intercepts[pred_idx_in_batch_exc[elm_idx]];
+      // If the current key is in the rep_keys, update the counts and flag it
+      auto it = rep_keys.find(cur_key[0]);
+      if (it != rep_keys.end()) {
+        it->second++;
+        ++num_rep_keys;
 
-        // Extrapolate the CDF to the number of buckets
-        pred_idx_in_batch_exc[elm_idx] = static_cast<unsigned int>(
-            std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
-      }
+      } else {
+        // No repeated key was detected, so place in bucket
 
-      // Go over the batch again and place the flagged keys in an exception
-      // list
-      bool exc_found = false;  // If exceptions in the batch, don't insert into
-                               // buckets, but save in an exception list
+        // Check if the element will cause a bucket overflow
+        if (major_bckt_sizes[pred_rank] < MAJOR_BCKT_CAPACITY) {
+          // The predicted bucket is not full
+          major_bckts[MAJOR_BCKT_CAPACITY * pred_rank +
+                      major_bckt_sizes[pred_rank]] = cur_key[0];
 
-      for (unsigned int elm_idx = 0; elm_idx < BATCH_SZ_EXP; ++elm_idx) {
-        exc_found = false;
-
-        // Iterate over the keys in the exception list corresponding to the
-        // predicted rank for the current key in the batch and the rank of the
-        // exception
-        for (unsigned int j = 0;
-             j < repeated_keys_predicted_ranks[pred_idx_in_batch_exc[elm_idx]]
-                     .size();
-             ++j) {
-          // If key in exception list, then flag it and update the counts that
-          // will be used later
-          if (repeated_keys_predicted_ranks[pred_idx_in_batch_exc[elm_idx]]
-                                           [j] == cur_key[elm_idx]) {
-            ++repeated_key_counts[pred_idx_in_batch_exc[elm_idx]]
-                                 [j];  // Increment count of exception value
-            exc_found = true;
-            ++total_repeated_keys;
-            break;
-          }
-        }
-
-        if (!exc_found)  // If no exception value was found in the batch,
-                         // then proceed to putting them in the predicted
-                         // buckets
-        {
-          // Check if the element will cause a bucket overflow
-          if (major_bckt_sizes[pred_idx_in_batch_exc[elm_idx]] <
-              MAJOR_BCKT_CAPACITY) {  // The predicted bucket has not reached
-            // full capacity, so place the element
-            // in the bucket
-            major_bckts[MAJOR_BCKT_CAPACITY * pred_idx_in_batch_exc[elm_idx] +
-                        major_bckt_sizes[pred_idx_in_batch_exc[elm_idx]]] =
-                cur_key[elm_idx];
-            ++major_bckt_sizes[pred_idx_in_batch_exc[elm_idx]];
-          } else {  // Place the item in the spill bucket
-            spill_bucket.push_back(cur_key[elm_idx]);
-          }
+          // Update the bucket size
+          ++major_bckt_sizes[pred_rank];
+        } else {  // The predicted bucket is full, place in the spill bucket
+          spill_bucket.push_back(cur_key[0]);
         }
       }
     }
@@ -610,7 +581,8 @@ void _sort_trained(RandomIt begin, RandomIt end,
 
   unsigned int NUM_MINOR_BCKT_PER_MAJOR_BCKT = std::max(
       1u, static_cast<unsigned>(MAJOR_BCKT_CAPACITY * OA_RATIO / THRESHOLD));
-  const unsigned int TOT_NUM_MINOR_BCKTS = NUM_MINOR_BCKT_PER_MAJOR_BCKT * FANOUT; 
+  const unsigned int TOT_NUM_MINOR_BCKTS =
+      NUM_MINOR_BCKT_PER_MAJOR_BCKT * FANOUT;
 
   vector<T> minor_bckts(NUM_MINOR_BCKT_PER_MAJOR_BCKT * THRESHOLD);
 
@@ -815,8 +787,7 @@ void _sort_trained(RandomIt begin, RandomIt end,
         for (unsigned int elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
              ++elm_idx) {
           // Place the element in the predicted position in the array
-          major_bckts[num_tot_elms_in_bckts +
-                      cnt_hist[pred_idx_cache[elm_idx]]] =
+          major_bckts[num_elms_in_bckts + cnt_hist[pred_idx_cache[elm_idx]]] =
               minor_bckts[bckt_idx * THRESHOLD + elm_idx];
           // Update counts
           --cnt_hist[pred_idx_cache[elm_idx]];
@@ -834,8 +805,8 @@ void _sort_trained(RandomIt begin, RandomIt end,
         // Perform Insertion Sort
         for (unsigned int elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
              ++elm_idx) {
-          cmp_idx = num_tot_elms_in_bckts + elm_idx - 1;
-          elm = major_bckts[num_tot_elms_in_bckts + elm_idx];
+          cmp_idx = num_elms_in_bckts + elm_idx - 1;
+          elm = major_bckts[num_elms_in_bckts + elm_idx];
           while (cmp_idx >= 0 && elm < major_bckts[cmp_idx]) {
             major_bckts[cmp_idx + 1] = major_bckts[cmp_idx];
             --cmp_idx;
@@ -844,7 +815,7 @@ void _sort_trained(RandomIt begin, RandomIt end,
           major_bckts[cmp_idx + 1] = elm;
         }
 
-        num_tot_elms_in_bckts += minor_bckt_sizes[bckt_idx];
+        num_elms_in_bckts += minor_bckt_sizes[bckt_idx];
       }  // end of iteration of each minor bucket
     }
   }  // end of iteration over each major bucket
@@ -856,70 +827,53 @@ void _sort_trained(RandomIt begin, RandomIt end,
   std::sort(spill_bucket.begin(), spill_bucket.end());
 
   //----------------------------------------------------------//
-  //               PLACE BACK THE EXCEPTION VALUES            //
-  //----------------------------------------------------------//
-
-  vector<T> linear_vals, linear_count;
-
-  for (auto val_idx = 0; val_idx < EXCEPTION_VEC_INIT_CAPACITY; ++val_idx) {
-    for (size_t exc_elm_idx = 0;
-         exc_elm_idx < repeated_keys_predicted_ranks[val_idx].size();
-         ++exc_elm_idx) {
-      linear_vals.push_back(
-          repeated_keys_predicted_ranks[val_idx][exc_elm_idx]);
-      linear_count.push_back(repeated_key_counts[val_idx][exc_elm_idx]);
-    }
-  }
-
-  //----------------------------------------------------------//
   //               MERGE BACK INTO ORIGINAL ARRAY             //
   //----------------------------------------------------------//
 
   // Merge the spill bucket with the elements in the buckets
-  std::merge(major_bckts.begin(), major_bckts.begin() + num_tot_elms_in_bckts,
-             spill_bucket.begin(), spill_bucket.end(),
-             begin + total_repeated_keys);
+  std::merge(major_bckts.begin(), major_bckts.begin() + num_elms_in_bckts,
+             spill_bucket.begin(), spill_bucket.end(), begin + num_rep_keys);
 
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-  //            Start merging the exception values            //
+  //                 Merge the repeated keys                  //
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
   // The read index for the exceptions
-  unsigned int exc_idx = 0;
+  auto rep_it = rep_keys.begin();
 
   // The read index for the already-merged elements from the buckets and the
   // spill bucket
-  unsigned int input_idx = total_repeated_keys;
+  unsigned int input_idx = num_rep_keys;
 
   // The write index for the final merging of everything
-  int ptr = 0;
+  int write_idx = 0;
 
-  while (input_idx < INPUT_SZ && exc_idx < linear_vals.size()) {
-    if (begin[input_idx] < linear_vals[exc_idx]) {
-      begin[ptr] = begin[input_idx];
-      ptr++;
-      input_idx++;
+  while (input_idx < INPUT_SZ && rep_it != rep_keys.end()) {
+    if (begin[input_idx] < rep_it->first) {
+      begin[write_idx] = begin[input_idx];
+      ++write_idx;
+      ++input_idx;
     } else {
-      for (int i = 0; i < linear_count[exc_idx]; i++) {
-        begin[ptr + i] = linear_vals[exc_idx];
+      for (size_t i = 0; i < rep_it->second; ++i) {
+        begin[write_idx + i] = rep_it->first;
       }
-      ptr += linear_count[exc_idx];
-      exc_idx++;
+      write_idx += rep_it->second;
+      ++rep_it;
     }
   }
 
-  while (exc_idx < linear_vals.size()) {
-    for (int i = 0; i < linear_count[exc_idx]; i++) {
-      begin[ptr + i] = linear_vals[exc_idx];
+  while (rep_it != rep_keys.end()) {
+    for (size_t i = 0; i < rep_it->second; ++i) {
+      begin[write_idx + i] = rep_it->first;
     }
-    ptr += linear_count[exc_idx];
-    exc_idx++;
+    write_idx += rep_it->first;
+    ++rep_it;
   }
 
   while (input_idx < INPUT_SZ) {
-    begin[ptr] = begin[input_idx];
-    ptr++;
-    input_idx++;
+    begin[write_idx] = begin[input_idx];
+    ++write_idx;
+    ++input_idx;
   }
 
   // The input array is now sorted
