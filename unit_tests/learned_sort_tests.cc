@@ -220,7 +220,6 @@ TEST(LS_SORT_TEST, ReverseSorted) {
  * Test Case suggested by @Morwenn: https://github.com/Morwenn
  */
 TEST(LS_SORT_TEST, UniformMod16) {
-  
   // Generate random array
   std::vector<int> arr;
   std::mt19937_64 prng(1604922353);
@@ -228,6 +227,23 @@ TEST(LS_SORT_TEST, UniformMod16) {
     arr.emplace_back(i % 16);
   }
   std::shuffle(arr.begin(), arr.end(), prng);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}
+
+TEST(LS_SORT_TEST, Zipf) {
+  // Generate random input
+  auto arr = zipf_distr<double>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
