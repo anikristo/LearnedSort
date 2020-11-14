@@ -42,6 +42,14 @@ class Benchmarks : public benchmark::Fixture {
     size_t size = state.range(0);
 
     switch (DATA_DISTR) {
+      case EXPONENTIAL:
+        arr = exponential_distr<data_t>(size);
+        break;
+
+      case LOGNORMAL:
+        arr = lognormal_distr<data_t>(size);
+        break;
+
       case NORMAL:
         arr = normal_distr<data_t>(size);
         break;
@@ -50,12 +58,8 @@ class Benchmarks : public benchmark::Fixture {
         arr = uniform_distr<data_t>(size);
         break;
 
-      case EXPONENTIAL:
-        arr = exponential_distr<data_t>(size);
-        break;
-
-      case LOGNORMAL:
-        arr = lognormal_distr<data_t>(size);
+      case ZIPF:
+        arr = zipf_distr<data_t>(size);
         break;
 
       case ROOT_DUPS:

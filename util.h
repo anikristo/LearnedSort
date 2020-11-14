@@ -28,10 +28,11 @@ using namespace std;
 
 // An enumeration of data distribution types to generate for the benchmarks.
 enum distr_t {
-  NORMAL,
-  UNIFORM,
   EXPONENTIAL,
   LOGNORMAL,
+  NORMAL,
+  UNIFORM,
+  ZIPF,
   ROOT_DUPS,
   TWO_DUPS,
   EIGHT_DUPS,
@@ -99,49 +100,16 @@ long long int get_checksum(vector<T> arr) {
 //                      Synthetic data generators                        //
 //-----------------------------------------------------------------------//
 template <class T>
-vector<T> normal_distr(size_t size, double mean = 1 << 12,
-                       double stddev = 1 << 10) {
-  vector<T> arr;
-  // Initialize random engine with normal distribution
-  random_device rd;
-  mt19937 generator(rd());
-  normal_distribution<> distribution(mean, stddev);
-
-  // Populate the input
-  for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator));
-  }
-
-  return arr;
-}
-
-template <class T>
-vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
-  if (a == 0 && b == -1) b = size;
-  vector<T> arr;
-  // Initialize random engine with normal distribution
-  random_device rd;
-  mt19937 generator(rd());
-  uniform_real_distribution<> distribution(a, b);
-
-  // Populate the input
-  for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator));
-  }
-
-  return arr;
-}
-
-template <class T>
 vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
   if (scale <= 0) scale = size / lambda;
-  vector<T> arr;
+
   // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
   exponential_distribution<> distribution(lambda);
 
   // Populate the input
+  vector<T> arr;
   for (size_t i = 0; i < size; i++) {
     arr.push_back(distribution(generator) * scale);
   }
@@ -152,13 +120,13 @@ vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
 template <class T>
 vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1,
                           double scale = 1e6) {
-  vector<T> arr;
   // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
   lognormal_distribution<> distribution(mean, stddev);
 
   // Populate the input
+  vector<T> arr;
   for (size_t i = 0; i < size; i++) {
     arr.push_back(distribution(generator) * scale);
   }
@@ -167,10 +135,98 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1,
 }
 
 template <class T>
-vector<T> root_dups_distr(size_t size) {
-  vector<T> arr;
+vector<T> normal_distr(size_t size, double mean = 1 << 12,
+                       double stddev = 1 << 10) {
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  normal_distribution<> distribution(mean, stddev);
 
   // Populate the input
+  vector<T> arr;
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator));
+  }
+
+  return arr;
+}
+
+template <class T>
+vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
+  if (a == 0 && b == -1) b = size;
+
+  // Initialize random engine with normal distribution
+  random_device rd;
+  mt19937 generator(rd());
+  uniform_real_distribution<> distribution(a, b);
+
+  // Populate the input
+  vector<T> arr;
+  for (size_t i = 0; i < size; i++) {
+    arr.push_back(distribution(generator));
+  }
+
+  return arr;
+}
+
+// Adapted from
+// https://stackoverflow.com/questions/9983239/how-to-generate-zipf-distributed-numbers-efficiently
+template <class T>
+vector<T> zipf_distr(size_t size, double skew = 0.5, size_t cardinality = 1e8) {
+  // Allocate space
+  vector<T> arr;
+
+  // Start generating numbers
+  for (size_t elm_idx = 0; elm_idx < size; ++elm_idx) {
+    static bool first = true;  // Static first time flag
+    static double c = 0;       // Normalization constant
+    static double *sum_probs;  // Pre-calculated sum of probabilities
+
+    // Compute normalization constant on first call only
+    if (first) {
+      for (size_t i = 1; i <= cardinality; ++i)
+        c = c + (1.0 / pow((double)i, skew));
+      c = 1.0 / c;
+
+      sum_probs = (double *)malloc((cardinality + 1) * sizeof(*sum_probs));
+      sum_probs[0] = 0;
+      for (size_t i = 1; i <= cardinality; ++i) {
+        sum_probs[i] = sum_probs[i - 1] + c / pow((double)i, skew);
+      }
+      first = false;
+    }
+
+    // Pull a uniform random number (0 < z < 1)
+    double z;
+    do {
+      z = 1. * rand() / RAND_MAX;
+    } while ((z == 0) || (z == 1));
+
+    // Map z to the value
+    size_t low = 1, high = cardinality, mid;
+    T zipf_value;  // Computed exponential value to be returneds
+    do {
+      mid = floor((low + high) / 2);
+
+      if (sum_probs[mid] >= z && sum_probs[mid - 1] < z) {
+        zipf_value = mid;
+        break;
+      } else if (sum_probs[mid] >= z) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
+      }
+    } while (low <= high);
+
+    arr.push_back(zipf_value);
+  }
+  return arr;
+}
+
+template <class T>
+vector<T> root_dups_distr(size_t size) {
+  // Populate the input
+  vector<T> arr;
   const size_t root = std::sqrt(size);
   for (size_t i = 0; i < size; i++) {
     arr.push_back(i % root);
@@ -181,9 +237,10 @@ vector<T> root_dups_distr(size_t size) {
 
 template <class T>
 vector<T> two_dups_distr(size_t size) {
-  vector<T> arr;
   T term = (size / 2) % size;
 
+  // Populate the input
+  vector<T> arr;
   for (size_t i = 0; i < size; ++i) {
     arr.push_back(i * i + term);
   }
@@ -193,9 +250,10 @@ vector<T> two_dups_distr(size_t size) {
 
 template <class T>
 vector<T> eight_dups_distr(size_t size) {
-  vector<T> arr;
   T term = (size / 2) % size;
 
+  // Populate the input
+  vector<T> arr;
   for (size_t i = 0; i < size; ++i) {
     arr.push_back(pow(i, 8) + term);
   }
@@ -206,13 +264,14 @@ vector<T> eight_dups_distr(size_t size) {
 template <class T>
 vector<T> sorted_uniform_distr(size_t size, double a = 0, double b = -1) {
   if (a == 0 && b == -1) b = size;
-  vector<T> arr;
+
   // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
   uniform_real_distribution<> distribution(a, b);
 
   // Populate the input
+  vector<T> arr;
   for (size_t i = 0; i < size; i++) {
     arr.push_back(distribution(generator));
   }
@@ -226,13 +285,14 @@ template <class T>
 vector<T> reverse_sorted_uniform_distr(size_t size, double a = 0,
                                        double b = -1) {
   if (a == 0 && b == -1) b = size;
-  vector<T> arr;
+
   // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
   uniform_real_distribution<> distribution(a, b);
 
   // Populate the input
+  vector<T> arr;
   for (size_t i = 0; i < size; i++) {
     arr.push_back(distribution(generator));
   }
