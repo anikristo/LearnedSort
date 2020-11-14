@@ -54,6 +54,10 @@ class Benchmarks : public benchmark::Fixture {
         arr = normal_distr<data_t>(size);
         break;
 
+      case MIX_OF_GAUSS:
+        arr = mix_of_gauss_distr<data_t>(size);
+        break;
+
       case UNIFORM:
         arr = uniform_distr<data_t>(size);
         break;

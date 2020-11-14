@@ -257,3 +257,20 @@ TEST(LS_SORT_TEST, Zipf) {
   // Test that it is sorted
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
+
+TEST(LS_SORT_TEST, MixGauss) {
+  // Generate random input
+  auto arr = mix_of_gauss_distr<double>(TEST_SIZE);
+
+  // Calculate the checksum
+  auto cksm = get_checksum(arr);
+
+  // Sort
+  learned_sort::sort(arr.begin(), arr.end());
+
+  // Test that the checksum is the same
+  ASSERT_EQ(cksm, get_checksum(arr));
+
+  // Test that it is sorted
+  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
+}

@@ -30,6 +30,7 @@ using namespace std;
 enum distr_t {
   EXPONENTIAL,
   LOGNORMAL,
+  MIX_OF_GAUSS,
   NORMAL,
   UNIFORM,
   ZIPF,
@@ -129,6 +130,42 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1,
   vector<T> arr;
   for (size_t i = 0; i < size; i++) {
     arr.push_back(distribution(generator) * scale);
+  }
+
+  return arr;
+}
+
+template <class T>
+vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
+  // Generate the means
+  vector<double> means = uniform_distr<T>(num_gauss, -500, 500);
+
+  // Generate the stdevs
+  vector<double> stdevs = uniform_distr<T>(num_gauss, 0, 100);
+
+  // Generate the weights
+  vector<double> weights = uniform_distr<T>(num_gauss, 0, 1);
+
+  // Normalize the weights
+  double sum_of_weights = std::accumulate(weights.begin(), weights.end(), 0.);
+  std::for_each(weights.begin(), weights.end(),
+                [&](auto x) { x /= sum_of_weights; });
+
+  // Initialize random number generator
+  random_device rd;
+  mt19937 generator(rd());
+
+  // Initialize random distribution selector
+  discrete_distribution<int> index_selector(weights.begin(), weights.end());
+
+  // Start generating random numbers from normal distributions
+  vector<T> arr;
+  for (size_t i = 0; i < size; ++i) {
+    auto random_idx = index_selector(generator);
+    normal_distribution<> distribution(means[random_idx], stdevs[random_idx]);
+
+    auto val = distribution(generator);
+    arr.push_back(val);
   }
 
   return arr;
