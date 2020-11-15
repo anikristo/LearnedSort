@@ -28,6 +28,7 @@ using namespace std;
 
 // An enumeration of data distribution types to generate for the benchmarks.
 enum distr_t {
+  CHI_SQUARED,
   EIGHT_DUPS,
   EXPONENTIAL,
   LOGNORMAL,
@@ -201,6 +202,22 @@ vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
 
     auto val = distribution(generator);
     arr.push_back(val);
+  }
+
+  return arr;
+}
+
+template <class T>
+vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 1e6) {
+  // Initialize random number generator
+  random_device rd;
+  mt19937 generator(rd());
+  chi_squared_distribution<> distribution(k);
+
+  // Populate the input
+  vector<T> arr;
+  for (int i = 0; i < size; ++i) {
+    arr.push_back(distribution(generator) * scale);
   }
 
   return arr;

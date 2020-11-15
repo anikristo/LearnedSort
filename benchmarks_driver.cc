@@ -42,6 +42,10 @@ class Benchmarks : public benchmark::Fixture {
     size_t size = state.range(0);
 
     switch (DATA_DISTR) {
+      case CHI_SQUARED:
+        arr = chi_squared_distr<data_t>(size);
+        break;
+
       case EIGHT_DUPS:
         arr = eight_dups_distr<data_t>(size);
         break;
@@ -89,7 +93,7 @@ class Benchmarks : public benchmark::Fixture {
       default:
         arr = normal_distr<data_t>(size);
         break;
-    } 
+    }
   }
 
   void TearDown(const ::benchmark::State &state) {
