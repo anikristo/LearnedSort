@@ -7,4 +7,4 @@ then
 ./compile.sh
 fi
 
-${DIR}/third_party/gtest-parallel/gtest-parallel ${DIR}/build/bin/LearnedSort_tests --repeat=100 --workers=${NUM_CPUS}
+${DIR}/third_party/gtest-parallel/gtest-parallel ${DIR}/build/bin/LearnedSort_tests --repeat=50 --workers=${NUM_CPUS}

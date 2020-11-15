@@ -28,26 +28,9 @@
 using namespace std;
 extern size_t TEST_SIZE;
 
-TEST(Timsort_TEST, UniformReal) {
+TEST(Timsort_TEST, UniformDouble) {
   // Generate random input
   auto arr = uniform_distr<double>(TEST_SIZE);
-
-  // Calculate the checksum
-  auto cksm = get_checksum(arr);
-
-  // Sort
-  gfx::timsort(arr.begin(), arr.end());
-
-  // Test that it is sorted
-  ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
-
-  // Test that the checksum is the same
-  ASSERT_EQ(cksm, get_checksum(arr));
-}
-
-TEST(Timsort_TEST, UniformInt) {
-  // Generate random input
-  auto arr = uniform_distr<int>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);

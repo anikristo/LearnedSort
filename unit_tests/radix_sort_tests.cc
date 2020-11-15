@@ -29,7 +29,7 @@ using namespace std;
 
 extern size_t TEST_SIZE;
 
-TEST(RADIX_SORT_TEST, UniformReal) {
+TEST(RADIX_SORT_TEST, UniformDouble) {
   // Generate random input
   auto arr = normal_distr<double>(TEST_SIZE, -100, 500);
 

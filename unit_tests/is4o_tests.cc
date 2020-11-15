@@ -28,9 +28,9 @@ extern size_t TEST_SIZE;
 
 using namespace std;
 
-TEST(IS4o_TEST, UniformInt) {
+TEST(IS4o_TEST, UniformDouble) {
   // Generate random input
-  auto arr = uniform_distr<int>(TEST_SIZE);
+  auto arr = uniform_distr<double>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
