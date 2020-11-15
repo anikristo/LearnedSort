@@ -28,17 +28,17 @@ using namespace std;
 
 // An enumeration of data distribution types to generate for the benchmarks.
 enum distr_t {
+  EIGHT_DUPS,
   EXPONENTIAL,
   LOGNORMAL,
   MIX_OF_GAUSS,
   NORMAL,
-  UNIFORM,
-  ZIPF,
-  ROOT_DUPS,
-  TWO_DUPS,
-  EIGHT_DUPS,
-  SORTED_UNIFORM,
   REVERSE_SORTED_UNIFORM,
+  ROOT_DUPS,
+  SORTED_UNIFORM,
+  TWO_DUPS,
+  UNIFORM,
+  ZIPF
 };
 
 // Helper table for hash values for the checksum function
@@ -136,42 +136,6 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1,
 }
 
 template <class T>
-vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
-  // Generate the means
-  vector<double> means = uniform_distr<T>(num_gauss, -500, 500);
-
-  // Generate the stdevs
-  vector<double> stdevs = uniform_distr<T>(num_gauss, 0, 100);
-
-  // Generate the weights
-  vector<double> weights = uniform_distr<T>(num_gauss, 0, 1);
-
-  // Normalize the weights
-  double sum_of_weights = std::accumulate(weights.begin(), weights.end(), 0.);
-  std::for_each(weights.begin(), weights.end(),
-                [&](auto x) { x /= sum_of_weights; });
-
-  // Initialize random number generator
-  random_device rd;
-  mt19937 generator(rd());
-
-  // Initialize random distribution selector
-  discrete_distribution<int> index_selector(weights.begin(), weights.end());
-
-  // Start generating random numbers from normal distributions
-  vector<T> arr;
-  for (size_t i = 0; i < size; ++i) {
-    auto random_idx = index_selector(generator);
-    normal_distribution<> distribution(means[random_idx], stdevs[random_idx]);
-
-    auto val = distribution(generator);
-    arr.push_back(val);
-  }
-
-  return arr;
-}
-
-template <class T>
 vector<T> normal_distr(size_t size, double mean = 1 << 12,
                        double stddev = 1 << 10) {
   // Initialize random engine with normal distribution
@@ -201,6 +165,42 @@ vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
   vector<T> arr;
   for (size_t i = 0; i < size; i++) {
     arr.push_back(distribution(generator));
+  }
+
+  return arr;
+}
+
+template <class T>
+vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
+  // Generate the means
+  vector means = uniform_distr<double>(num_gauss, -500, 500);
+
+  // Generate the stdevs
+  vector stdevs = uniform_distr<double>(num_gauss, 0, 100);
+
+  // Generate the weights
+  vector weights = uniform_distr<double>(num_gauss, 0, 1);
+
+  // Normalize the weights
+  double sum_of_weights = std::accumulate(weights.begin(), weights.end(), 0.);
+  std::for_each(weights.begin(), weights.end(),
+                [&](auto x) { x /= sum_of_weights; });
+
+  // Initialize random number generator
+  random_device rd;
+  mt19937 generator(rd());
+
+  // Initialize random distribution selector
+  discrete_distribution<int> index_selector(weights.begin(), weights.end());
+
+  // Start generating random numbers from normal distributions
+  vector<T> arr;
+  for (size_t i = 0; i < size; ++i) {
+    auto random_idx = index_selector(generator);
+    normal_distribution<> distribution(means[random_idx], stdevs[random_idx]);
+
+    auto val = distribution(generator);
+    arr.push_back(val);
   }
 
   return arr;

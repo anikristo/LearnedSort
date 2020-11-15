@@ -42,6 +42,10 @@ class Benchmarks : public benchmark::Fixture {
     size_t size = state.range(0);
 
     switch (DATA_DISTR) {
+      case EIGHT_DUPS:
+        arr = eight_dups_distr<data_t>(size);
+        break;
+
       case EXPONENTIAL:
         arr = exponential_distr<data_t>(size);
         break;
@@ -50,12 +54,28 @@ class Benchmarks : public benchmark::Fixture {
         arr = lognormal_distr<data_t>(size);
         break;
 
+      case MIX_OF_GAUSS:
+        arr = mix_of_gauss_distr<data_t>(size);
+        break;
+
       case NORMAL:
         arr = normal_distr<data_t>(size);
         break;
 
-      case MIX_OF_GAUSS:
-        arr = mix_of_gauss_distr<data_t>(size);
+      case REVERSE_SORTED_UNIFORM:
+        arr = reverse_sorted_uniform_distr<data_t>(size);
+        break;
+
+      case ROOT_DUPS:
+        arr = root_dups_distr<data_t>(size);
+        break;
+
+      case SORTED_UNIFORM:
+        arr = sorted_uniform_distr<data_t>(size);
+        break;
+
+      case TWO_DUPS:
+        arr = two_dups_distr<data_t>(size);
         break;
 
       case UNIFORM:
@@ -66,30 +86,10 @@ class Benchmarks : public benchmark::Fixture {
         arr = zipf_distr<data_t>(size);
         break;
 
-      case ROOT_DUPS:
-        arr = root_dups_distr<data_t>(size);
-        break;
-
-      case TWO_DUPS:
-        arr = two_dups_distr<data_t>(size);
-        break;
-
-      case EIGHT_DUPS:
-        arr = eight_dups_distr<data_t>(size);
-        break;
-
-      case SORTED_UNIFORM:
-        arr = sorted_uniform_distr<data_t>(size);
-        break;
-
-      case REVERSE_SORTED_UNIFORM:
-        arr = reverse_sorted_uniform_distr<data_t>(size);
-        break;
-
       default:
         arr = normal_distr<data_t>(size);
         break;
-    }
+    } 
   }
 
   void TearDown(const ::benchmark::State &state) {
@@ -261,9 +261,7 @@ BENCHMARK_DEFINE_F(Benchmarks, SkaSort)
 
 static void benchmark_arguments(benchmark::internal::Benchmark *b) {
   // Set input size parameter
-  b->Arg(1E6);  // 1M
-  b->Arg(1E7);  // 10M
-  b->Arg(1E8);  // 100M
+  b->Arg(10'000'000);  // 10M Keys
 
   // Set time measurement unit
   b->Unit(benchmark::kMillisecond);
