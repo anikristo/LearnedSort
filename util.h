@@ -29,15 +29,14 @@ using namespace std;
 // An enumeration of data distribution types to generate for the benchmarks.
 enum distr_t {
   CHI_SQUARED,
-  EIGHT_DUPS,
   EXPONENTIAL,
+  IDENTICAL,
   LOGNORMAL,
   MIX_OF_GAUSS,
   NORMAL,
   REVERSE_SORTED_UNIFORM,
   ROOT_DUPS,
   SORTED_UNIFORM,
-  TWO_DUPS,
   UNIFORM,
   ZIPF
 };
@@ -103,7 +102,11 @@ long long int get_checksum(vector<T> arr) {
 //-----------------------------------------------------------------------//
 template <class T>
 vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
-  if (scale <= 0) scale = size / lambda;
+  // Adjust the default scale parameter w.r.t. the numerical type
+  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
+    scale = size;
+  else if (scale <= 0)
+    scale = 1;
 
   // Initialize random engine with normal distribution
   random_device rd;
@@ -120,8 +123,14 @@ vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
 }
 
 template <class T>
-vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1,
-                          double scale = 1e6) {
+vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 0.5,
+                          double scale = 0) {
+  // Adjust the default scale parameter w.r.t. the numerical type
+  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
+    scale = size;
+  else if (scale <= 0)
+    scale = 1;
+
   // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
@@ -155,6 +164,7 @@ vector<T> normal_distr(size_t size, double mean = 1 << 12,
 
 template <class T>
 vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
+  // Adjust the default parameters
   if (a == 0 && b == -1) b = size;
 
   // Initialize random engine with normal distribution
@@ -208,7 +218,13 @@ vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
 }
 
 template <class T>
-vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 1e6) {
+vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 0) {
+  // Adjust the default scale parameter w.r.t. the numerical type
+  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
+    scale = size;
+  else if (scale <= 0)
+    scale = 1;
+
   // Initialize random number generator
   random_device rd;
   mt19937 generator(rd());
@@ -290,71 +306,28 @@ vector<T> root_dups_distr(size_t size) {
 }
 
 template <class T>
-vector<T> two_dups_distr(size_t size) {
-  T term = (size / 2) % size;
-
+vector<T> sorted_uniform_distr(size_t size) {
   // Populate the input
-  vector<T> arr;
-  for (size_t i = 0; i < size; ++i) {
-    arr.push_back(i * i + term);
-  }
+  vector<T> arr = uniform_distr<T>(size);
 
-  return arr;
-}
-
-template <class T>
-vector<T> eight_dups_distr(size_t size) {
-  T term = (size / 2) % size;
-
-  // Populate the input
-  vector<T> arr;
-  for (size_t i = 0; i < size; ++i) {
-    arr.push_back(pow(i, 8) + term);
-  }
-
-  return arr;
-}
-
-template <class T>
-vector<T> sorted_uniform_distr(size_t size, double a = 0, double b = -1) {
-  if (a == 0 && b == -1) b = size;
-
-  // Initialize random engine with normal distribution
-  random_device rd;
-  mt19937 generator(rd());
-  uniform_real_distribution<> distribution(a, b);
-
-  // Populate the input
-  vector<T> arr;
-  for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator));
-  }
-
+  // Sort the input
   std::sort(arr.begin(), arr.end());
 
   return arr;
 }
 
 template <class T>
-vector<T> reverse_sorted_uniform_distr(size_t size, double a = 0,
-                                       double b = -1) {
-  if (a == 0 && b == -1) b = size;
-
-  // Initialize random engine with normal distribution
-  random_device rd;
-  mt19937 generator(rd());
-  uniform_real_distribution<> distribution(a, b);
-
+vector<T> reverse_sorted_uniform_distr(size_t size) {
   // Populate the input
-  vector<T> arr;
-  for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator));
-  }
+  vector<T> arr = sorted_uniform_distr<T>(size);
 
-  std::sort(arr.begin(), arr.end());
+  // Reverse the input
   std::reverse(arr.begin(), arr.end());
-
   return arr;
 }
 
+template <class T>
+vector<T> identical_distr(size_t size, T value = 0) {
+  return vector<T>(size, value);
+}
 #endif  // UTIL_H

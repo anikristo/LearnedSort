@@ -46,12 +46,12 @@ class Benchmarks : public benchmark::Fixture {
         arr = chi_squared_distr<data_t>(size);
         break;
 
-      case EIGHT_DUPS:
-        arr = eight_dups_distr<data_t>(size);
-        break;
-
       case EXPONENTIAL:
         arr = exponential_distr<data_t>(size);
+        break;
+
+      case IDENTICAL:
+        arr = identical_distr<data_t>(size);
         break;
 
       case LOGNORMAL:
@@ -76,10 +76,6 @@ class Benchmarks : public benchmark::Fixture {
 
       case SORTED_UNIFORM:
         arr = sorted_uniform_distr<data_t>(size);
-        break;
-
-      case TWO_DUPS:
-        arr = two_dups_distr<data_t>(size);
         break;
 
       case UNIFORM:
