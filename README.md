@@ -202,41 +202,37 @@ RMI::Params p(
 
 ### Benchmarking on different data distributions
 
-The default distribution of the input data for the benchmarks is set to a Standard Normal distribution (`µ=0; σ=1`), however, we provide synthetic data generators for:
+The default distribution of the input data for the benchmarks is set to a Normal distribution, however, we provide synthetic data generators for:
 
-- __Normal Distribution__:
+- Exponential distribution
+- Lognormal distribution
+- Normal distribution
+- Uniform distribution
+- Mixture of Gaussians distribution
+- Chi Squared distribution
+- Zipf distribution
+- RootDups distribution (see: [BlockQuicksort paper](https://arxiv.org/pdf/1604.06697.pdf) p.15)
 
-```cpp
-template<class T>
-vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1);
-```
+## Benchmark results
 
-- __Uniform Distribution__:
+In the following sections we give concrete performance numbers for a particular server-grade computer.
 
-```cpp
-template<class T>
-vector<T> uniform_distr(size_t size, double a = 0, double b = 1);
-```
+### Benchmark Setup
 
-- __Exponential Distribution__:
+- __CPU__:  Intel&reg; Xeon&reg; Gold 6150 CPU @ 2.70GHz
+- __RAM__:  376GB
+- __OS__:   Linux Ubuntu 20.04, kernel 5.4.0-26-generic
+- __CXX__:  GCC 9.3.0-10ubuntu2
 
-```cpp
-template<class T>
-vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 1e6);
-```
+### Performance charts
+The following chart displays the performance of LearnedSort and other sorting algorithms on a set of randomly generated input distributions containing 10M keys. The histograms in the vertical axis correspond to the shape of the distributions used for the benchmark.
 
-- __Lognormal Distribution__:
+![](./charts/charts_random.png) 
 
-```cpp
-template<class T>
-vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 1, double scale = 1e6);
-```
+### Special input types
+In the cases when the input distribution contain a large number of duplicates (e.g. Zipf distribution), or when the input is in some special order, the performance of LearnedSort changes as follows:
 
-In order to switch the data distribution, change Line 32 in `benchmarks_driver.cc` with either `UNIFORM`,  `EXPONENTIAL`, or `LOGNORMAL`:
-
-```cpp
-distr_t DATA_DISTR = NORMAL;  // NOTE: You can change the distribution here
-```
+![](./charts/charts_special.png) 
 
 
 ## Limitations
