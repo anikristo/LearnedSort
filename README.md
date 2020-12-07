@@ -230,7 +230,7 @@ The following chart displays the performance of LearnedSort and other sorting al
 ![](./charts/charts_random.png) 
 
 ### Special input types
-In the cases when the input distribution contain a large number of duplicates (e.g. Zipf distribution), or when the input is in some special order, the performance of LearnedSort changes as follows:
+In the cases when the input distribution contain a large number of duplicates (e.g. Zipf distribution), or when the input is in some special order, the performance of LearnedSort changes as follows. (10M keys)
 
 ![](./charts/charts_special.png) 
 
