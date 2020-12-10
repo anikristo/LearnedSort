@@ -27,7 +27,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Executable
 set(BINARY ${CMAKE_PROJECT_NAME}_benchmarks)
-add_executable(${BINARY} benchmarks_driver.cc)
+add_executable(${BINARY} src/benchmarks_driver.cc)
 target_link_libraries(${BINARY} benchmark)
 
 # Tests

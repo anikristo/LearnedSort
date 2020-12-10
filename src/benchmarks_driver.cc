@@ -28,7 +28,7 @@
 #include "pdqsort.h"
 #include "radix_sort.hh"
 #include "ska_sort.hpp"
-#include "util.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -40,56 +40,7 @@ class Benchmarks : public benchmark::Fixture {
  protected:
   void SetUp(const ::benchmark::State &state) {
     size_t size = state.range(0);
-
-    switch (DATA_DISTR) {
-      case CHI_SQUARED:
-        arr = chi_squared_distr<data_t>(size);
-        break;
-
-      case EXPONENTIAL:
-        arr = exponential_distr<data_t>(size);
-        break;
-
-      case IDENTICAL:
-        arr = identical_distr<data_t>(size);
-        break;
-
-      case LOGNORMAL:
-        arr = lognormal_distr<data_t>(size);
-        break;
-
-      case MIX_OF_GAUSS:
-        arr = mix_of_gauss_distr<data_t>(size);
-        break;
-
-      case NORMAL:
-        arr = normal_distr<data_t>(size);
-        break;
-
-      case REVERSE_SORTED_UNIFORM:
-        arr = reverse_sorted_uniform_distr<data_t>(size);
-        break;
-
-      case ROOT_DUPS:
-        arr = root_dups_distr<data_t>(size);
-        break;
-
-      case SORTED_UNIFORM:
-        arr = sorted_uniform_distr<data_t>(size);
-        break;
-
-      case UNIFORM:
-        arr = uniform_distr<data_t>(size);
-        break;
-
-      case ZIPF:
-        arr = zipf_distr<data_t>(size);
-        break;
-
-      default:
-        arr = normal_distr<data_t>(size);
-        break;
-    }
+    arr = generate_data<data_t>(DATA_DISTR, size);
   }
 
   void TearDown(const ::benchmark::State &state) {
