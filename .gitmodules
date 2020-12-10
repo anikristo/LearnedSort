@@ -21,3 +21,6 @@
 	url = https://github.com/skarupke/ska_sort.git
 [submodule "third_party/isp4o"]
 	ignore = untracked
+[submodule "third_party/ips4o"]
+	path = third_party/ips4o
+	url = https://github.com/SaschaWitt/ips4o.git
