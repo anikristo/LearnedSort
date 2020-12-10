@@ -29,6 +29,7 @@ using namespace std;
 // An enumeration of data distribution types to generate for the benchmarks.
 enum distr_t {
   CHI_SQUARED,
+  EIGHT_DUPS,
   EXPONENTIAL,
   IDENTICAL,
   LOGNORMAL,
@@ -37,6 +38,7 @@ enum distr_t {
   REVERSE_SORTED_UNIFORM,
   ROOT_DUPS,
   SORTED_UNIFORM,
+  TWO_DUPS,
   UNIFORM,
   ZIPF
 };
@@ -105,6 +107,10 @@ vector<T> generate_data(distr_t data_distr, size_t size) {
       return chi_squared_distr<T>(size);
       break;
 
+    case EIGHT_DUPS:
+      return eight_dups_distr<T>(size);
+      break;
+
     case EXPONENTIAL:
       return exponential_distr<T>(size);
       break;
@@ -135,6 +141,10 @@ vector<T> generate_data(distr_t data_distr, size_t size) {
 
     case SORTED_UNIFORM:
       return sorted_uniform_distr<T>(size);
+      break;
+
+    case TWO_DUPS:
+      return two_dups_distr<T>(size);
       break;
 
     case UNIFORM:
