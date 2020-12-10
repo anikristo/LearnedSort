@@ -6,7 +6,6 @@
  * @author Ani Kristo (anikristo@gmail.com)
  * @brief The purpose of this file is to provide an implementation of Learned
  Sort, a model-enhanced sorting algorithm.
- * @version 0.1
  * @date 2020-05-02
  *
  * @copyright Copyright (c) 2020 Ani Kristo <anikristo@gmail.com>
@@ -24,9 +23,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#define LEARNED_SORT_VERSION_MAJOR 1
-#define LEARNED_SORT_VERSION_MINOR 1
 
 #include <algorithm>
 #include <cmath>
