@@ -902,7 +902,7 @@ void learned_sort::sort(
     std::sort(begin, end);
   } else {
     // Train
-    RMI rmi = train(begin, end, params);
+    auto rmi = train(begin, end, params);
 
     // Sort
     if (rmi.trained)
