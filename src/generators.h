@@ -157,7 +157,7 @@ vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 0) {
 
   // Populate the input
   vector<T> arr;
-  for (int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     arr.push_back(distribution(generator) * scale);
   }
 
@@ -271,8 +271,10 @@ vector<T> eight_dups_distr(size_t size) {
   while (2 * largest_power_of_two <= size) {
     largest_power_of_two *= 2;
   }
-  largest_power_of_two = std::min<unsigned long>(
-      largest_power_of_two, std::numeric_limits<T>::max());
+
+  if (std::is_same<T, unsigned>())
+    largest_power_of_two = std::min<unsigned long>(
+        largest_power_of_two, std::numeric_limits<T>::max());
 
   // Populate the input
   vector<T> arr;
