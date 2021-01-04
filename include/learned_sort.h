@@ -98,7 +98,8 @@ class TwoLayerRMI {
 template <class RandomIt>
 TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> train(
     RandomIt, RandomIt,
-    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params &);
+    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
+        &);
 
 // Default comparison function [std::less()] and default hyperparameters
 // Drop-in replacement for std::sort()
@@ -109,7 +110,8 @@ void sort(RandomIt, RandomIt);
 template <class RandomIt>
 void sort(
     RandomIt, RandomIt,
-    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params &);
+    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
+        &);
 }  // namespace learned_sort
 
 using namespace learned_sort;
@@ -126,8 +128,9 @@ TwoLayerRMI<T>::Params::Params() {
 
 template <class T>
 TwoLayerRMI<T>::Params::Params(float sampling_rate, float overallocation,
-                       unsigned int fanout, unsigned int batch_sz,
-                       unsigned int threshold, vector<unsigned int> arch) {
+                               unsigned int fanout, unsigned int batch_sz,
+                               unsigned int threshold,
+                               vector<unsigned int> arch) {
   this->batch_sz = batch_sz;
   this->fanout = fanout;
   this->overallocation_ratio = overallocation;
@@ -171,13 +174,14 @@ TwoLayerRMI<T>::TwoLayerRMI(Params p) {
  * pointer or a function object.
  * @param p The hyperparameters for the CDF model, which describe the
  * architecture and sampling ratio.
- * @return learned_sort::TwoLayerRMI The trained model which, given a key, will output a
- * value between [0,1] as a predicted CDF value.
+ * @return learned_sort::TwoLayerRMI The trained model which, given a key, will
+ * output a value between [0,1] as a predicted CDF value.
  */
 template <class RandomIt>
 TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
     RandomIt begin, RandomIt end,
-    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params &p) {
+    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
+        &p) {
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
 
@@ -198,10 +202,12 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
   }
 
   if (p.overallocation_ratio <= 1) {
-    p.overallocation_ratio = TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO;
+    p.overallocation_ratio =
+        TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO;
     cerr << "\33[93;1mWARNING\33[0m: Invalid overallocation ratio. Using "
             "default ("
-         << TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO << ")." << endl;
+         << TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO << ")."
+         << endl;
   }
 
   if (p.sampling_rate <= 0 or p.sampling_rate > 1) {
@@ -237,8 +243,9 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
 
   // Determine sample size
   const unsigned int SAMPLE_SZ = std::min<unsigned int>(
-      INPUT_SZ, std::max<unsigned int>(p.sampling_rate * INPUT_SZ,
-                                       TwoLayerRMI<T>::Params::MIN_SORTING_SIZE));
+      INPUT_SZ,
+      std::max<unsigned int>(p.sampling_rate * INPUT_SZ,
+                             TwoLayerRMI<T>::Params::MIN_SORTING_SIZE));
 
   // Create a sample array
   rmi.training_sample.reserve(SAMPLE_SZ);
@@ -399,8 +406,9 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
 }  // end of training function
 
 template <class RandomIt>
-void _sort_trained(RandomIt begin, RandomIt end,
-                   TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
+void _sort_trained(
+    RandomIt begin, RandomIt end,
+    TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
   // Determine the data type
   typedef typename iterator_traits<RandomIt>::value_type T;
 
@@ -896,6 +904,27 @@ void learned_sort::sort(
     RandomIt begin, RandomIt end,
     typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
         &params) {
+  // Check if the data is already sorted
+  if (*(end - 1) >= *begin && std::is_sorted(begin, end)) {
+    return;
+  }
+
+  // Check if the data is sorted in descending order
+  if (*(end - 1) <= *begin) {
+    auto is_reverse_sorted = true;
+
+    for (auto i = begin; i != end - 1; ++i) {
+      if (*i < *(i + 1)) {
+        is_reverse_sorted = false;
+      }
+    }
+
+    if (is_reverse_sorted) {
+      std::reverse(begin, end);
+      return;
+    }
+  }
+
   // Use std::sort for very small arrays
   if (std::distance(begin, end) <=
       std::max(params.fanout * params.threshold, 5 * params.arch[1])) {
@@ -929,8 +958,11 @@ void learned_sort::sort(
  */
 template <class RandomIt>
 void learned_sort::sort(RandomIt begin, RandomIt end) {
-  typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params p;
-  learned_sort::sort(begin, end, p);
+  if (begin != end) {
+    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
+        p;
+    learned_sort::sort(begin, end, p);
+  }
 }
 
 #endif  // LEARNED_SORT_H

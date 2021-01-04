@@ -62,7 +62,7 @@ BENCHMARK_DEFINE_F(Benchmarks, LearnedSort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -81,7 +81,7 @@ BENCHMARK_DEFINE_F(Benchmarks, StdSort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -100,7 +100,7 @@ BENCHMARK_DEFINE_F(Benchmarks, IS4o)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -120,7 +120,7 @@ BENCHMARK_DEFINE_F(Benchmarks, RadixSort)(benchmark::State &state) {
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -139,7 +139,7 @@ BENCHMARK_DEFINE_F(Benchmarks, Timsort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -158,7 +158,7 @@ BENCHMARK_DEFINE_F(Benchmarks, BlockQuicksort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -177,7 +177,7 @@ BENCHMARK_DEFINE_F(Benchmarks, PDQS)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -196,7 +196,7 @@ BENCHMARK_DEFINE_F(Benchmarks, SkaSort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
