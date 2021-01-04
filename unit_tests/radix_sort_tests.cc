@@ -21,7 +21,7 @@
 #include <random>
 #include <vector>
 
-#include "../util.h"
+#include "../src/utils.h"
 #include "gtest/gtest.h"
 #include "radix_sort.hh"
 

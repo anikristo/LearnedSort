@@ -227,12 +227,12 @@ In the following sections we give concrete performance numbers for a particular 
 ### Performance charts
 The following chart displays the performance of LearnedSort and other sorting algorithms on a set of randomly generated input distributions containing 10M keys. The histograms in the vertical axis correspond to the shape of the distributions used for the benchmark.
 
-![](./charts/charts_random.png) 
+![](./plots/charts_random.png) 
 
 ### Special input types
 In the cases when the input distribution contain a large number of duplicates (e.g. Zipf distribution), or when the input is in some special order, the performance of LearnedSort changes as follows. (10M keys)
 
-![](./charts/charts_special.png) 
+![](./plots/charts_special.png) 
 
 
 ## Limitations

@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "../util.h"
+#include "../src/utils.h"
 #include "gtest/gtest.h"
 #include "ips4o.hpp"
 
