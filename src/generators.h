@@ -230,63 +230,6 @@ vector<T> root_dups_distr(size_t size) {
   return arr;
 }
 
-/**
- * Adapted from:
- * https://github.com/ips4o/ips4o-benchmark-suite/blob/4d11b0311833f59a31858314b5927101f6077389/src/generator/generator.hpp#L449
- *
- * TODO: Only works for doubles?
- */
-template <class T>
-vector<T> two_dups_distr(size_t size) {
-  // Find the largest power of 2 that is less than size
-  unsigned long largest_power_of_two = 1;
-  while (2 * largest_power_of_two <= size) {
-    largest_power_of_two *= 2;
-  }
-
-  // Limit maximum size of values for 32-bit keys
-  if constexpr (std::is_same_v<T, unsigned>) {  // TODO do this for floats too?
-                                                // or say if sizeof(T) = 4;
-    unsigned max = std::numeric_limits<T>::max();
-    largest_power_of_two = std::min<unsigned long>(largest_power_of_two, max);
-  }
-
-  // Populate the input
-  vector<T> arr;
-  for (size_t i = 0; i < size; ++i) {
-    arr.push_back(static_cast<T>((i * i + largest_power_of_two / 2) %
-                                 largest_power_of_two));
-  }
-  return arr;
-}
-
-/**
- * Adapted from:
- * https://github.com/ips4o/ips4o-benchmark-suite/blob/4d11b0311833f59a31858314b5927101f6077389/src/generator/generator.hpp#L488
- */
-template <class T>
-vector<T> eight_dups_distr(size_t size) {
-  // Find the largest power of two
-  unsigned long largest_power_of_two = 1;
-  while (2 * largest_power_of_two <= size) {
-    largest_power_of_two *= 2;
-  }
-
-  if (std::is_same<T, unsigned>())
-    largest_power_of_two = std::min<unsigned long>(
-        largest_power_of_two, std::numeric_limits<T>::max());
-
-  // Populate the input
-  vector<T> arr;
-  for (size_t i = 0; i < size; ++i) {
-    unsigned long temp = (i * i) % largest_power_of_two;
-    temp = (temp * temp) % largest_power_of_two;
-    arr.push_back(static_cast<T>((temp * temp + largest_power_of_two / 2) %
-                                 largest_power_of_two));
-  }
-  return arr;
-}
-
 template <class T>
 vector<T> sorted_uniform_distr(size_t size) {
   // Populate the input
