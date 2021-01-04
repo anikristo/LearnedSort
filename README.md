@@ -30,7 +30,6 @@ To get started, see [Build instructions](#building-this-project) and [Testing in
 1. [Instructions](#instructions)
     1. [Building this project](#building-this-project)
     1. [Running the benchmarks](#running-the-benchmarks)
-    1. [Running the benchmarks](#running-the-benchmarks)
     1. [Running the unit tests](#running-the-unit-tests)
 1. [Usage](#usage)
     1. [Basic usage](#basic-usage)
