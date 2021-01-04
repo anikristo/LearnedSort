@@ -35,6 +35,10 @@ To get started, see [Build instructions](#building-this-project) and [Testing in
 1. [Usage](#usage)
     1. [Basic usage](#basic-usage)
     1. [More features](#more-features)
+1. [Benchmark Results](#benchmark-results)
+    1. [Benchmark setup](#benchmark-setup)
+    1. [Performance charts](#performance-charts)
+    1. [Special input types](#special-input-types)
 1. [Limitations](#limitations)
 1. [License & credits](#license--credits)
 
@@ -217,7 +221,7 @@ The default distribution of the input data for the benchmarks is set to a Normal
 
 In the following sections we give concrete performance numbers for a particular server-grade computer.
 
-### Benchmark Setup
+### Benchmark setup
 
 - __CPU__:  Intel&reg; Xeon&reg; Gold 6150 CPU @ 2.70GHz
 - __RAM__:  376GB
