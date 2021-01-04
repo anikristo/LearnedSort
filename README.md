@@ -100,15 +100,16 @@ The build directory should now look like this:
 
 We use [Google Benchmark](https://www.github.com/google/benchmark) to measure the running times for Learned Sort and other sorting algorithm baselines for comparison.
 The benchmarks will be run for various input size, and with enough iterations to provide a stable statistic.
-At the end of the benchmark for each algorithm, Google Benchmark will provide an estimation of the coefficient for the high-order term in the time complexity and report the [RMS error](https://en.wikipedia.org/wiki/Root-mean-square_deviation).
+The output shows the total running time (column "Time") and the time spent in the CPU (column "CPU") in milliseconds. 
+Each row displays the name of the algorithm that is being benchmarked, followed by the input size. 
+The benchmark will repeat a few times (see `run.sh`) and it will report the mean, median, and standard deviation of the running times.
+For each algorithm, Google Benchmark will also provide an estimation of the coefficient for the high-order term in the time complexity, the estimated complexity class, and the [RMS error](https://en.wikipedia.org/wiki/Root-mean-square_deviation).
 
 In order to execute the benchmarks:
 
 ```sh
 ./run.sh
 ```
-
-The output shows the total running time (column "Time") and the time spent in the CPU (column "CPU") in milliseconds. Each row displays the name of the algorithm that is being benchmarked, followed by the input size (from 1M up to 1B keys). After each algorithm is done executing, the code will display the calculated constant term for the Big O and the RMS error for this estimate.
 
 ### Running the unit tests
 
