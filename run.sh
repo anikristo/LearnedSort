@@ -6,4 +6,4 @@ then
 ./compile.sh
 fi
 
-${DIR}/build/bin/LearnedSort_benchmarks
+${DIR}/build/bin/LearnedSort_benchmarks --benchmark_repetitions=5
