@@ -26,7 +26,7 @@
 #include "ips4o.hpp"
 #include "learned_sort.h"
 #include "pdqsort.h"
-#include "radix_sort.hh"
+#include "radix_sort.h"
 #include "ska_sort.hpp"
 #include "utils.h"
 
