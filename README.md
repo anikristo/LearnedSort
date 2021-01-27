@@ -255,19 +255,20 @@ This work is licensed under the [GNU General Public License v3.0](LICENSE) and a
 
 ```bibtex
 @inproceedings{10.1145/3318464.3389752,
-    author = {Kristo, Ani and Vaidya, Kapil and \c{C}etintemel, Ugur and Misra, Sanchit and Kraska, Tim},
-    title = {The Case for a Learned Sorting Algorithm},
-    year = {2020},
-    isbn = {9781450367356},
-    publisher = {International Foundation for Autonomous Agents and Multiagent Systems},
-    address = {Richland, SC},
-    url = {https://doi.org/10.1145/3318464.3389752},
-    doi = {10.1145/3318464.3389752},
-    booktitle = {Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data},
-    pages = {1001–1016},
-    numpages = {16},
-    location = {Portland, OR, USA},
-    series = {SIGMOD ’20}
+author = {Kristo, Ani and Vaidya, Kapil and \c{C}etintemel, Ugur and Misra, Sanchit and Kraska, Tim},
+title = {The Case for a Learned Sorting Algorithm},
+year = {2020},
+isbn = {9781450367356},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3318464.3389752},
+doi = {10.1145/3318464.3389752},
+booktitle = {Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data},
+pages = {1001–1016},
+numpages = {16},
+keywords = {linear models, linear interpolation, learned algorithm, RMI, sorting algorithm, ML for systems, CDF, sorting},
+location = {Portland, OR, USA},
+series = {SIGMOD '20}
 }
   
 
