@@ -35,6 +35,14 @@ using namespace std;
 
 namespace learned_sort {
 
+// Helper functions for working with unsigned types
+template <typename T>
+inline T _get_key(T a) {
+  return a;
+}
+inline int _get_key(unsigned int a) { return static_cast<int>(a); }
+inline long _get_key(unsigned long a) { return static_cast<long>(a); }
+
 // A training point struct, which packs the key and its respective scaled CDF
 // value
 template <typename T>
@@ -59,29 +67,28 @@ class TwoLayerRMI {
   // CDF model hyperparameters
   struct Params {
     // Member fields
-    unsigned int batch_sz;
-    unsigned int fanout;
+    size_t batch_sz;
+    size_t fanout;
     float overallocation_ratio;
     float sampling_rate;
-    unsigned int threshold;
-    vector<unsigned int> arch;
+    size_t threshold;
+    vector<size_t> arch;
 
     // Default hyperparameters
-    static constexpr unsigned int DEFAULT_BATCH_SZ = 10;
-    static constexpr unsigned int DEFAULT_FANOUT = 1e3;
+    static constexpr size_t DEFAULT_BATCH_SZ = 10;
+    static constexpr size_t DEFAULT_FANOUT = 1e3;
     static constexpr float DEFAULT_OVERALLOCATION_RATIO = 1.1;
     static constexpr float DEFAULT_SAMPLING_RATE = .01;
-    static constexpr unsigned int DEFAULT_THRESHOLD = 100;
-    vector<unsigned int> DEFAULT_ARCH = {1, 1000};
-    static constexpr unsigned int MIN_SORTING_SIZE = 1e4;
+    static constexpr size_t DEFAULT_THRESHOLD = 100;
+    vector<size_t> DEFAULT_ARCH = {1, 1000};
+    static constexpr size_t MIN_SORTING_SIZE = 1e4;
 
     // Default constructor
     Params();
 
     // Constructor with custom hyperparameter values
-    Params(float sampling_rate, float overallocation, unsigned int fanout,
-           unsigned int batch_size, unsigned int threshold,
-           vector<unsigned int> model_arch);
+    Params(float sampling_rate, float overallocation, size_t fanout,
+           size_t batch_size, size_t threshold, vector<size_t> model_arch);
   };
 
   // Member variables of the CDF model
@@ -128,9 +135,8 @@ TwoLayerRMI<T>::Params::Params() {
 
 template <class T>
 TwoLayerRMI<T>::Params::Params(float sampling_rate, float overallocation,
-                               unsigned int fanout, unsigned int batch_sz,
-                               unsigned int threshold,
-                               vector<unsigned int> arch) {
+                               size_t fanout, size_t batch_sz, size_t threshold,
+                               vector<size_t> arch) {
   this->batch_sz = batch_sz;
   this->fanout = fanout;
   this->overallocation_ratio = overallocation;
@@ -186,7 +192,7 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
   typedef typename iterator_traits<RandomIt>::value_type T;
 
   // Determine input size
-  const unsigned int INPUT_SZ = std::distance(begin, end);
+  const size_t INPUT_SZ = std::distance(begin, end);
 
   // Validate parameters
   if (p.batch_sz >= INPUT_SZ) {
@@ -231,9 +237,9 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
 
   // Initialize the CDF model
   TwoLayerRMI<T> rmi(p);
-  static const unsigned int NUM_LAYERS = p.arch.size();
+  static const size_t NUM_LAYERS = p.arch.size();
   vector<vector<vector<training_point<T>>>> training_data(NUM_LAYERS);
-  for (unsigned int layer_idx = 0; layer_idx < NUM_LAYERS; ++layer_idx) {
+  for (size_t layer_idx = 0; layer_idx < NUM_LAYERS; ++layer_idx) {
     training_data[layer_idx].resize(p.arch[layer_idx]);
   }
 
@@ -242,16 +248,15 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
   //----------------------------------------------------------//
 
   // Determine sample size
-  const unsigned int SAMPLE_SZ = std::min<unsigned int>(
-      INPUT_SZ,
-      std::max<unsigned int>(p.sampling_rate * INPUT_SZ,
-                             TwoLayerRMI<T>::Params::MIN_SORTING_SIZE));
+  const size_t SAMPLE_SZ = std::min<size_t>(
+      INPUT_SZ, std::max<size_t>(p.sampling_rate * INPUT_SZ,
+                                 TwoLayerRMI<T>::Params::MIN_SORTING_SIZE));
 
   // Create a sample array
   rmi.training_sample.reserve(SAMPLE_SZ);
 
   // Start sampling
-  unsigned int offset = static_cast<unsigned int>(1. * INPUT_SZ / SAMPLE_SZ);
+  size_t offset = static_cast<size_t>(1. * INPUT_SZ / SAMPLE_SZ);
   for (auto i = begin; i < end; i += offset) {
     // NOTE:  We don't directly assign SAMPLE_SZ to rmi.training_sample_sz
     //        to avoid issues with divisibility
@@ -277,7 +282,7 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
   //----------------------------------------------------------//
 
   // Populate the training data for the root model
-  for (unsigned int i = 0; i < SAMPLE_SZ; ++i) {
+  for (size_t i = 0; i < SAMPLE_SZ; ++i) {
     training_data[0][0].push_back({rmi.training_sample[i], 1. * i / SAMPLE_SZ});
   }
 
@@ -300,18 +305,17 @@ TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
   // Populate the training data for the next layer
   for (const auto &d : *current_training_data) {
     // Predict the model index in next layer
-    unsigned int rank = current_model->slope * d.x + current_model->intercept;
+    size_t rank = current_model->slope * d.x + current_model->intercept;
 
     // Normalize the rank between 0 and the number of models in the next layer
-    rank =
-        std::max(static_cast<unsigned int>(0), std::min(p.arch[1] - 1, rank));
+    rank = std::max(static_cast<size_t>(0), std::min(p.arch[1] - 1, rank));
 
     // Place the data in the predicted training bucket
     training_data[1][rank].push_back(d);
   }
 
   // Train the leaf models
-  for (unsigned int model_idx = 0; model_idx < p.arch[1]; ++model_idx) {
+  for (size_t model_idx = 0; model_idx < p.arch[1]; ++model_idx) {
     // Update iterator variables
     current_training_data = &training_data[1][model_idx];
     current_model = &rmi.models[1][model_idx];
@@ -413,20 +417,20 @@ void _sort_trained(
   typedef typename iterator_traits<RandomIt>::value_type T;
 
   // Cache runtime parameters
-  static const unsigned int BATCH_SZ = rmi.hp.batch_sz;
+  static const size_t BATCH_SZ = rmi.hp.batch_sz;
   static const double OA_RATIO = rmi.hp.overallocation_ratio;
-  static const unsigned int FANOUT = rmi.hp.fanout;
-  static const unsigned int THRESHOLD = rmi.hp.threshold;
+  static const size_t FANOUT = rmi.hp.fanout;
+  static const size_t THRESHOLD = rmi.hp.threshold;
 
   // Determine the input size
-  const unsigned int INPUT_SZ = std::distance(begin, end);
+  const size_t INPUT_SZ = std::distance(begin, end);
 
   //----------------------------------------------------------//
   //                          INIT                            //
   //----------------------------------------------------------//
 
   // Constants for buckets
-  const unsigned int MAJOR_BCKT_CAPACITY = INPUT_SZ / FANOUT;
+  const size_t MAJOR_BCKT_CAPACITY = INPUT_SZ / FANOUT;
 
   // Constants for repeated keys
   const size_t TRAINING_SAMPLE_SZ = rmi.training_sample.size();
@@ -439,7 +443,7 @@ void _sort_trained(
   vector<T> major_bckts(INPUT_SZ + 1);
 
   // Array to keep track of the major bucket sizes
-  vector<unsigned int> major_bckt_sizes(FANOUT, 0);
+  vector<size_t> major_bckt_sizes(FANOUT, 0);
 
   // Stores the repeated keys detected during training
   vector<T> rep_keys_in_training;
@@ -449,18 +453,18 @@ void _sort_trained(
   map<T, size_t> rep_keys;
 
   // Stores the total number of repeated keys in the input (aka non-unique keys)
-  unsigned int num_rep_keys = 0;
+  size_t num_rep_keys = 0;
 
   // Counts the nubmer of total elements that are in the buckets, hence
   // INPUT_SZ - spill_bucket.size() at the end of the recursive bucketization
-  unsigned int num_elms_in_bckts = 0;
+  size_t num_elms_in_bckts = 0;
 
   // Cache the model parameters
   auto root_slope = rmi.models[0][0].slope;
   auto root_intrcpt = rmi.models[0][0].intercept;
-  unsigned int num_models = rmi.hp.arch[1];
+  size_t num_models = rmi.hp.arch[1];
   vector<double> slopes, intercepts;
-  for (unsigned int i = 0; i < num_models; ++i) {
+  for (size_t i = 0; i < num_models; ++i) {
     slopes.push_back(rmi.models[1][i].slope);
     intercepts.push_back(rmi.models[1][i].intercept);
   }
@@ -470,7 +474,7 @@ void _sort_trained(
   //----------------------------------------------------------//
 
   // Count the occurrences of equal keys
-  unsigned int cnt_rep_keys = 1;
+  size_t cnt_rep_keys = 1;
   for (size_t i = 1; i < TRAINING_SAMPLE_SZ; i++) {
     if (rmi.training_sample[i] == rmi.training_sample[i - 1]) {
       ++cnt_rep_keys;
@@ -515,14 +519,15 @@ void _sort_trained(
     pred_rank = 0;
 
     // Process each key in order
-    for (auto cur_key = begin; cur_key < end; ++cur_key) {
+    for (auto iter = begin; iter < end; ++iter) {
+      auto cur_key = _get_key(iter[0]);
+
       // Predict the model idx in the leaf layer
       pred_rank = static_cast<int>(std::max(
-          0.,
-          std::min(num_models - 1., root_slope * cur_key[0] + root_intrcpt)));
+          0., std::min(num_models - 1., root_slope * cur_key + root_intrcpt)));
 
       // Predict the CDF
-      pred_cdf = slopes[pred_rank] * cur_key[0] + intercepts[pred_rank];
+      pred_cdf = slopes[pred_rank] * cur_key + intercepts[pred_rank];
 
       // Scale the CDF to the number of buckets
       pred_rank = static_cast<int>(
@@ -531,32 +536,33 @@ void _sort_trained(
       if (major_bckt_sizes[pred_rank] <
           MAJOR_BCKT_CAPACITY) {  // The predicted bucket is not full
         major_bckts[MAJOR_BCKT_CAPACITY * pred_rank +
-                    major_bckt_sizes[pred_rank]] = cur_key[0];
+                    major_bckt_sizes[pred_rank]] = cur_key;
 
         // Update the bucket size
         ++major_bckt_sizes[pred_rank];
       } else {  // The predicted bucket is full, place in the spill bucket
-        spill_bucket.push_back(cur_key[0]);
+        spill_bucket.push_back(cur_key);
       }
     }
   } else {  // There are many repeated keys in the sample
 
     // Process each element in the batch and save their predicted indices
-    for (auto cur_key = begin; cur_key < end; ++cur_key) {
+    for (auto iter = begin; iter < end; ++iter) {
+      auto cur_key = _get_key(iter[0]);
+
       // Predict the model idx in the leaf layer
       pred_rank = static_cast<int>(std::max(
-          0.,
-          std::min(num_models - 1., root_slope * cur_key[0] + root_intrcpt)));
+          0., std::min(num_models - 1., root_slope * cur_key + root_intrcpt)));
 
       // Predict the CDF
-      pred_cdf = slopes[pred_rank] * cur_key[0] + intercepts[pred_rank];
+      pred_cdf = slopes[pred_rank] * cur_key + intercepts[pred_rank];
 
       // Scale the CDF to the number of buckets
       pred_rank = static_cast<int>(
           std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
 
       // If the current key is in the rep_keys, update the counts and flag it
-      auto it = rep_keys.find(cur_key[0]);
+      auto it = rep_keys.find(cur_key);
       if (it != rep_keys.end()) {
         it->second++;
         ++num_rep_keys;
@@ -568,12 +574,12 @@ void _sort_trained(
         if (major_bckt_sizes[pred_rank] < MAJOR_BCKT_CAPACITY) {
           // The predicted bucket is not full
           major_bckts[MAJOR_BCKT_CAPACITY * pred_rank +
-                      major_bckt_sizes[pred_rank]] = cur_key[0];
+                      major_bckt_sizes[pred_rank]] = cur_key;
 
           // Update the bucket size
           ++major_bckt_sizes[pred_rank];
         } else {  // The predicted bucket is full, place in the spill bucket
-          spill_bucket.push_back(cur_key[0]);
+          spill_bucket.push_back(cur_key);
         }
       }
     }
@@ -583,10 +589,9 @@ void _sort_trained(
   //               Second round of shuffling                  //
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
 
-  unsigned int NUM_MINOR_BCKT_PER_MAJOR_BCKT = std::max(
+  size_t NUM_MINOR_BCKT_PER_MAJOR_BCKT = std::max(
       1u, static_cast<unsigned>(MAJOR_BCKT_CAPACITY * OA_RATIO / THRESHOLD));
-  const unsigned int TOT_NUM_MINOR_BCKTS =
-      NUM_MINOR_BCKT_PER_MAJOR_BCKT * FANOUT;
+  const size_t TOT_NUM_MINOR_BCKTS = NUM_MINOR_BCKT_PER_MAJOR_BCKT * FANOUT;
 
   vector<T> minor_bckts(NUM_MINOR_BCKT_PER_MAJOR_BCKT * THRESHOLD);
 
@@ -594,18 +599,17 @@ void _sort_trained(
   int bckt_start_offset = 0;
 
   // Stores the predicted CDF values for the elements in the current bucket
-  unsigned int pred_idx_cache[THRESHOLD];
+  size_t pred_idx_cache[THRESHOLD];
 
   // Caches the predicted bucket indices for each element in the batch
-  vector<unsigned int> batch_cache(BATCH_SZ, 0);
+  vector<size_t> batch_cache(BATCH_SZ, 0);
 
   // Array to keep track of sizes for the minor buckets in the current
   // bucket
-  vector<unsigned int> minor_bckt_sizes(NUM_MINOR_BCKT_PER_MAJOR_BCKT, 0);
+  vector<size_t> minor_bckt_sizes(NUM_MINOR_BCKT_PER_MAJOR_BCKT, 0);
 
   // Iterate over each major bucket
-  for (unsigned int major_bckt_idx = 0; major_bckt_idx < FANOUT;
-       ++major_bckt_idx) {
+  for (size_t major_bckt_idx = 0; major_bckt_idx < FANOUT; ++major_bckt_idx) {
     // Update the bucket start offset
     bckt_start_offset = major_bckt_idx * MAJOR_BCKT_CAPACITY;
 
@@ -613,15 +617,15 @@ void _sort_trained(
     fill(minor_bckt_sizes.begin(), minor_bckt_sizes.end(), 0);
 
     // Find out the number of batches for this bucket
-    unsigned int num_batches = major_bckt_sizes[major_bckt_idx] / BATCH_SZ;
+    size_t num_batches = major_bckt_sizes[major_bckt_idx] / BATCH_SZ;
 
     // Iterate over the elements in the current bucket in batch-mode
-    for (unsigned int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
+    for (size_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
       // Iterate over the elements in the batch and store their predicted
       // ranks
-      for (unsigned int elm_idx = 0; elm_idx < BATCH_SZ; ++elm_idx) {
+      for (size_t elm_idx = 0; elm_idx < BATCH_SZ; ++elm_idx) {
         // Find the current element
-        auto cur_elm = major_bckts[bckt_start_offset + elm_idx];
+        auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
 
         // Predict the leaf-layer model
         batch_cache[elm_idx] = static_cast<int>(std::max(
@@ -641,9 +645,9 @@ void _sort_trained(
 
       // Iterate over the elements in the batch again, and place them in the
       // sub-buckets, or spill bucket
-      for (unsigned int elm_idx = 0; elm_idx < BATCH_SZ; ++elm_idx) {
+      for (size_t elm_idx = 0; elm_idx < BATCH_SZ; ++elm_idx) {
         // Find the current element
-        auto cur_elm = major_bckts[bckt_start_offset + elm_idx];
+        auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
 
         // Check if the element will cause a bucket overflow
         if (minor_bckt_sizes[batch_cache[elm_idx]] <
@@ -667,11 +671,11 @@ void _sort_trained(
     // current bucket in case its size wasn't divisible by      //
     // the BATCH_SZ                                             //
     //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-    unsigned int num_remaining_elm =
+    size_t num_remaining_elm =
         major_bckt_sizes[major_bckt_idx] - num_batches * BATCH_SZ;
 
-    for (unsigned int elm_idx = 0; elm_idx < num_remaining_elm; ++elm_idx) {
-      auto cur_elm = major_bckts[bckt_start_offset + elm_idx];
+    for (size_t elm_idx = 0; elm_idx < num_remaining_elm; ++elm_idx) {
+      auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
       batch_cache[elm_idx] = static_cast<int>(std::max(
           0., std::min(num_models - 1., root_slope * cur_elm + root_intrcpt)));
       pred_cdf = slopes[batch_cache[elm_idx]] * cur_elm +
@@ -683,7 +687,7 @@ void _sort_trained(
     }
 
     for (unsigned elm_idx = 0; elm_idx < num_remaining_elm; ++elm_idx) {
-      auto cur_elm = major_bckts[bckt_start_offset + elm_idx];
+      auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
       if (minor_bckt_sizes[batch_cache[elm_idx]] < THRESHOLD) {
         minor_bckts[THRESHOLD * batch_cache[elm_idx] +
                     minor_bckt_sizes[batch_cache[elm_idx]]] = cur_elm;
@@ -698,7 +702,7 @@ void _sort_trained(
     //----------------------------------------------------------//
 
     // Iterate over the minor buckets of the current bucket
-    for (unsigned int bckt_idx = 0; bckt_idx < NUM_MINOR_BCKT_PER_MAJOR_BCKT;
+    for (size_t bckt_idx = 0; bckt_idx < NUM_MINOR_BCKT_PER_MAJOR_BCKT;
          ++bckt_idx) {
       if (minor_bckt_sizes[bckt_idx] > 0) {
         // Update the bucket start offset
@@ -707,7 +711,7 @@ void _sort_trained(
             INPUT_SZ / TOT_NUM_MINOR_BCKTS;
 
         // Count array for the model-enhanced counting sort subroutine
-        vector<unsigned int> cnt_hist(THRESHOLD, 0);
+        vector<size_t> cnt_hist(THRESHOLD, 0);
 
         /*
          * OPTIMIZATION
@@ -735,10 +739,11 @@ void _sort_trained(
           // CDF only using the leaf model
 
           // Iterate over the elements and place them into the minor buckets
-          for (unsigned int elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
+          for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
                ++elm_idx) {
             // Find the current element
-            auto cur_elm = minor_bckts[bckt_idx * THRESHOLD + elm_idx];
+            auto cur_elm =
+                _get_key(minor_bckts[bckt_idx * THRESHOLD + elm_idx]);
 
             // Predict the CDF
             pred_cdf = slopes[pred_model_first_elm] * cur_elm +
@@ -757,10 +762,11 @@ void _sort_trained(
           // current element
 
           // Iterate over the elements and place them into the minor buckets
-          for (unsigned int elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
+          for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
                ++elm_idx) {
             // Find the current element
-            auto cur_elm = minor_bckts[bckt_idx * THRESHOLD + elm_idx];
+            auto cur_elm =
+                _get_key(minor_bckts[bckt_idx * THRESHOLD + elm_idx]);
 
             // Predict the model idx in the leaf layer
             auto model_idx_next_layer = static_cast<int>(
@@ -771,7 +777,7 @@ void _sort_trained(
                        intercepts[model_idx_next_layer];
 
             // Scale the predicted CDF to the input size and cache it
-            pred_idx_cache[elm_idx] = static_cast<unsigned int>(std::max(
+            pred_idx_cache[elm_idx] = static_cast<size_t>(std::max(
                 0., std::min(THRESHOLD - 1.,
                              (pred_cdf * INPUT_SZ) - bckt_start_offset)));
 
@@ -783,12 +789,12 @@ void _sort_trained(
         --cnt_hist[0];
 
         // Calculate the running totals
-        for (unsigned int cnt_idx = 1; cnt_idx < THRESHOLD; ++cnt_idx) {
+        for (size_t cnt_idx = 1; cnt_idx < THRESHOLD; ++cnt_idx) {
           cnt_hist[cnt_idx] += cnt_hist[cnt_idx - 1];
         }
 
         // Re-shuffle the elms based on the calculated cumulative counts
-        for (unsigned int elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
+        for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
              ++elm_idx) {
           // Place the element in the predicted position in the array
           major_bckts[num_elms_in_bckts + cnt_hist[pred_idx_cache[elm_idx]]] =
@@ -807,7 +813,7 @@ void _sort_trained(
         int cmp_idx;
 
         // Perform Insertion Sort
-        for (unsigned int elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
+        for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
              ++elm_idx) {
           cmp_idx = num_elms_in_bckts + elm_idx - 1;
           elm = major_bckts[num_elms_in_bckts + elm_idx];
@@ -847,7 +853,7 @@ void _sort_trained(
 
   // The read index for the already-merged elements from the buckets and the
   // spill bucket
-  unsigned int input_idx = num_rep_keys;
+  size_t input_idx = num_rep_keys;
 
   // The write index for the final merging of everything
   int write_idx = 0;
