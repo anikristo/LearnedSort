@@ -13,5 +13,5 @@ mkdir build
 fi
 cd build
 cmake ..
-make -j${NUM_CPUS}
+make -j${NUM_CPUS} LearnedSort_benchmarks LearnedSort_tests
 cd ..
