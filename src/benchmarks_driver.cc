@@ -33,7 +33,7 @@
 using namespace std;
 
 // NOTE: You can change the distribution here
-distr_t DATA_DISTR = NORMAL;
+distr_t DATA_DISTR = UNIFORM;
 typedef double data_t;
 
 class Benchmarks : public benchmark::Fixture {
