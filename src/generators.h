@@ -35,7 +35,7 @@ vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
   else if (scale <= 0)
     scale = 1;
 
-  // Initialize random engine with normal distribution
+  // Initialize random engine
   random_device rd;
   mt19937 generator(rd());
   exponential_distribution<> distribution(lambda);
@@ -58,7 +58,7 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 0.5,
   else if (scale <= 0)
     scale = 1;
 
-  // Initialize random engine with normal distribution
+  // Initialize random engine
   random_device rd;
   mt19937 generator(rd());
   lognormal_distribution<> distribution(mean, stddev);
@@ -73,9 +73,15 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 0.5,
 }
 
 template <class T>
-vector<T> normal_distr(size_t size, double mean = 1 << 12,
-                       double stddev = 1 << 10) {
-  // Initialize random engine with normal distribution
+vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1,
+                       double scale = 0) {
+  // Adjust the default scale parameter w.r.t. the numerical type
+  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
+    scale = size;
+  else if (scale <= 0)
+    scale = 1;
+
+  // Initialize random engine
   random_device rd;
   mt19937 generator(rd());
   normal_distribution<> distribution(mean, stddev);
@@ -83,7 +89,7 @@ vector<T> normal_distr(size_t size, double mean = 1 << 12,
   // Populate the input
   vector<T> arr(size);
   for (size_t i = 0; i < size; i++) {
-    arr[i] = distribution(generator);
+    arr[i] = distribution(generator) * scale;
   }
   return arr;
 }
@@ -113,10 +119,10 @@ vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
 template <class T>
 vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
   // Generate the means
-  vector means = uniform_distr<double>(num_gauss, -500, 500);
+  vector means = uniform_distr<double>(num_gauss, -5000, 5000);
 
   // Generate the stdevs
-  vector stdevs = uniform_distr<double>(num_gauss, 0, 100);
+  vector stdevs = uniform_distr<double>(num_gauss, 0, 1e6);
 
   // Generate the weights
   vector weights = uniform_distr<double>(num_gauss, 0, 1);
