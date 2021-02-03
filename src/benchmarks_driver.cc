@@ -62,7 +62,8 @@ BENCHMARK_DEFINE_F(Benchmarks, LearnedSort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -72,8 +73,6 @@ BENCHMARK_DEFINE_F(Benchmarks, LearnedSort)
     // Sort
     learned_sort::sort(arr.begin(), arr.end());
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, StdSort)
@@ -81,7 +80,8 @@ BENCHMARK_DEFINE_F(Benchmarks, StdSort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -91,8 +91,6 @@ BENCHMARK_DEFINE_F(Benchmarks, StdSort)
     // Sort
     std::sort(arr.begin(), arr.end());
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, IS4o)
@@ -100,7 +98,8 @@ BENCHMARK_DEFINE_F(Benchmarks, IS4o)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -110,8 +109,6 @@ BENCHMARK_DEFINE_F(Benchmarks, IS4o)
     // Sort
     ips4o::sort(arr.begin(), arr.end());
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 // NOTE:
@@ -120,7 +117,8 @@ BENCHMARK_DEFINE_F(Benchmarks, RadixSort)(benchmark::State &state) {
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -130,8 +128,6 @@ BENCHMARK_DEFINE_F(Benchmarks, RadixSort)(benchmark::State &state) {
     // Sort
     radix_sort(arr.begin(), arr.end());
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, Timsort)
@@ -139,7 +135,8 @@ BENCHMARK_DEFINE_F(Benchmarks, Timsort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -149,8 +146,6 @@ BENCHMARK_DEFINE_F(Benchmarks, Timsort)
     // Sort
     gfx::timsort(arr.begin(), arr.end());
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, BlockQuicksort)
@@ -158,7 +153,8 @@ BENCHMARK_DEFINE_F(Benchmarks, BlockQuicksort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -168,8 +164,6 @@ BENCHMARK_DEFINE_F(Benchmarks, BlockQuicksort)
     // Sort
     blocked_double_pivot_check_mosqrt::sort(arr);
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, PDQS)
@@ -177,7 +171,8 @@ BENCHMARK_DEFINE_F(Benchmarks, PDQS)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -187,8 +182,6 @@ BENCHMARK_DEFINE_F(Benchmarks, PDQS)
     // Sort
     pdqsort(arr.begin(), arr.end());
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 BENCHMARK_DEFINE_F(Benchmarks, SkaSort)
@@ -196,7 +189,8 @@ BENCHMARK_DEFINE_F(Benchmarks, SkaSort)
   for (auto _ : state) {
     // Re-shuffle
     state.PauseTiming();
-    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM && DATA_DISTR != IDENTICAL) {
+    if (DATA_DISTR != SORTED_UNIFORM && DATA_DISTR != REVERSE_SORTED_UNIFORM &&
+        DATA_DISTR != IDENTICAL) {
       std::random_device rd;
       std::mt19937 g(rd());
       std::shuffle(arr.begin(), arr.end(), g);
@@ -206,8 +200,6 @@ BENCHMARK_DEFINE_F(Benchmarks, SkaSort)
     // Sort
     ska_sort(arr.begin(), arr.end());
   }
-
-  state.SetComplexityN(state.range(0));
 }
 
 static void benchmark_arguments(benchmark::internal::Benchmark *b) {
@@ -218,30 +210,14 @@ static void benchmark_arguments(benchmark::internal::Benchmark *b) {
   b->Unit(benchmark::kMillisecond);
 }
 
-BENCHMARK_REGISTER_F(Benchmarks, LearnedSort)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oAuto);
-BENCHMARK_REGISTER_F(Benchmarks, IS4o)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oNLogN);
-BENCHMARK_REGISTER_F(Benchmarks, RadixSort)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oN);
-BENCHMARK_REGISTER_F(Benchmarks, StdSort)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oNLogN);
-BENCHMARK_REGISTER_F(Benchmarks, Timsort)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oNLogN);
-BENCHMARK_REGISTER_F(Benchmarks, BlockQuicksort)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oNLogN);
-BENCHMARK_REGISTER_F(Benchmarks, PDQS)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oNLogN);
-BENCHMARK_REGISTER_F(Benchmarks, SkaSort)
-    ->Apply(benchmark_arguments)
-    ->Complexity(benchmark::BigO::oNLogN);
+BENCHMARK_REGISTER_F(Benchmarks, LearnedSort)->Apply(benchmark_arguments);
+BENCHMARK_REGISTER_F(Benchmarks, IS4o)->Apply(benchmark_arguments);
+BENCHMARK_REGISTER_F(Benchmarks, RadixSort)->Apply(benchmark_arguments);
+BENCHMARK_REGISTER_F(Benchmarks, StdSort)->Apply(benchmark_arguments);
+BENCHMARK_REGISTER_F(Benchmarks, Timsort)->Apply(benchmark_arguments);
+BENCHMARK_REGISTER_F(Benchmarks, BlockQuicksort)->Apply(benchmark_arguments);
+BENCHMARK_REGISTER_F(Benchmarks, PDQS)->Apply(benchmark_arguments);
+BENCHMARK_REGISTER_F(Benchmarks, SkaSort)->Apply(benchmark_arguments);
 
 // Run the benchmark
 BENCHMARK_MAIN();

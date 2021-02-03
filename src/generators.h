@@ -20,7 +20,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include <random>
+#include <type_traits>
 #include <vector>
 
 using namespace std;
@@ -33,15 +35,15 @@ vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
   else if (scale <= 0)
     scale = 1;
 
-  // Initialize random engine with normal distribution
+  // Initialize random engine
   random_device rd;
   mt19937 generator(rd());
   exponential_distribution<> distribution(lambda);
 
   // Populate the input
-  vector<T> arr;
+  vector<T> arr(size);
   for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator) * scale);
+    arr[i] = distribution(generator) * scale;
   }
 
   return arr;
@@ -56,41 +58,49 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 0.5,
   else if (scale <= 0)
     scale = 1;
 
-  // Initialize random engine with normal distribution
+  // Initialize random engine
   random_device rd;
   mt19937 generator(rd());
   lognormal_distribution<> distribution(mean, stddev);
 
   // Populate the input
-  vector<T> arr;
+  vector<T> arr(size);
   for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator) * scale);
+    arr[i] = distribution(generator) * scale;
   }
 
   return arr;
 }
 
 template <class T>
-vector<T> normal_distr(size_t size, double mean = 1 << 12,
-                       double stddev = 1 << 10) {
-  // Initialize random engine with normal distribution
+vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1,
+                       double scale = 0) {
+  // Adjust the default scale parameter w.r.t. the numerical type
+  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
+    scale = size;
+  else if (scale <= 0)
+    scale = 1;
+
+  // Initialize random engine
   random_device rd;
   mt19937 generator(rd());
   normal_distribution<> distribution(mean, stddev);
 
   // Populate the input
-  vector<T> arr;
+  vector<T> arr(size);
   for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator));
+    arr[i] = distribution(generator) * scale;
   }
-
   return arr;
 }
 
 template <class T>
 vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
   // Adjust the default parameters
-  if (a == 0 && b == -1) b = size;
+  if (a == 0 && b == -1) {
+    b = size;
+    if (is_signed<T>::value) a = -1. * size;
+  }
 
   // Initialize random engine with normal distribution
   random_device rd;
@@ -98,9 +108,9 @@ vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
   uniform_real_distribution<> distribution(a, b);
 
   // Populate the input
-  vector<T> arr;
+  vector<T> arr(size);
   for (size_t i = 0; i < size; i++) {
-    arr.push_back(distribution(generator));
+    arr[i] = distribution(generator);
   }
 
   return arr;
@@ -109,10 +119,10 @@ vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
 template <class T>
 vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
   // Generate the means
-  vector means = uniform_distr<double>(num_gauss, -500, 500);
+  vector means = uniform_distr<double>(num_gauss, -5000, 5000);
 
   // Generate the stdevs
-  vector stdevs = uniform_distr<double>(num_gauss, 0, 100);
+  vector stdevs = uniform_distr<double>(num_gauss, 0, 1e6);
 
   // Generate the weights
   vector weights = uniform_distr<double>(num_gauss, 0, 1);
@@ -130,13 +140,13 @@ vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
   discrete_distribution<int> index_selector(weights.begin(), weights.end());
 
   // Start generating random numbers from normal distributions
-  vector<T> arr;
+  vector<T> arr(size);
   for (size_t i = 0; i < size; ++i) {
     auto random_idx = index_selector(generator);
     normal_distribution<> distribution(means[random_idx], stdevs[random_idx]);
 
     auto val = distribution(generator);
-    arr.push_back(val);
+    arr[i] = val;
   }
 
   return arr;
@@ -156,9 +166,9 @@ vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 0) {
   chi_squared_distribution<> distribution(k);
 
   // Populate the input
-  vector<T> arr;
+  vector<T> arr(size);
   for (size_t i = 0; i < size; ++i) {
-    arr.push_back(distribution(generator) * scale);
+    arr[i] = distribution(generator) * scale;
   }
 
   return arr;
@@ -167,12 +177,13 @@ vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 0) {
 // Adapted from
 // https://stackoverflow.com/questions/9983239/how-to-generate-zipf-distributed-numbers-efficiently
 template <class T>
-vector<T> zipf_distr(size_t size, double skew = 0.5, size_t cardinality = 1e8) {
+vector<T> zipf_distr(size_t size, double skew = 0.75,
+                     size_t cardinality = 1e8) {
   // Allocate space
-  vector<T> arr;
+  vector<T> arr(size);
 
   // Start generating numbers
-  for (size_t elm_idx = 0; elm_idx < size; ++elm_idx) {
+  for (size_t i = 0; i < size; ++i) {
     static bool first = true;  // Static first time flag
     static double c = 0;       // Normalization constant
     static double *sum_probs;  // Pre-calculated sum of probabilities
@@ -213,7 +224,7 @@ vector<T> zipf_distr(size_t size, double skew = 0.5, size_t cardinality = 1e8) {
       }
     } while (low <= high);
 
-    arr.push_back(zipf_value);
+    arr[i] = zipf_value;
   }
   return arr;
 }
@@ -221,10 +232,11 @@ vector<T> zipf_distr(size_t size, double skew = 0.5, size_t cardinality = 1e8) {
 template <class T>
 vector<T> root_dups_distr(size_t size) {
   // Populate the input
-  vector<T> arr;
+  vector<T> arr(size);
   const size_t root = std::sqrt(size);
+
   for (size_t i = 0; i < size; i++) {
-    arr.push_back(i % root);
+    arr[i] = i % root;
   }
 
   return arr;
