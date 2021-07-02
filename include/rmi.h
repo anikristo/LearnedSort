@@ -40,7 +40,6 @@ class TwoLayerRMI {
     static constexpr long DEFAULT_THRESHOLD = 100;
     static constexpr long DEFAULT_NUM_LEAF_MODELS = 1000;
     static constexpr long MIN_SORTING_SIZE = 1e4;
-    static constexpr long NUM_PERCENTILES = 100;
 
     // Default constructor
     Params() {
@@ -67,7 +66,6 @@ class TwoLayerRMI {
   linear_model root_model;
   vector<linear_model> leaf_models;
   vector<T> training_sample;
-  vector<double> percentile_estimations;
   Params hp;
   bool enable_dups_detection;
 
@@ -76,7 +74,6 @@ class TwoLayerRMI {
     this->trained = false;
     this->hp = p;
     this->leaf_models.resize(p.num_leaf_models);
-    this->percentile_estimations.resize(p.NUM_PERCENTILES);
     this->enable_dups_detection = true;
   }
 
@@ -299,25 +296,6 @@ class TwoLayerRMI {
           current_model->intercept = min.y - current_model->slope * min.x;
         }
       }
-    }
-
-    // Calculate the percentiles of the training bucket sizes
-    double scaling_factor = 1. / SAMPLE_SZ;
-    for (long i = 0; i < SAMPLE_SZ; ++i) {
-      // Predict the CDF
-      long pred_leaf = std::max(
-          std::min(training_sample[i] * root_model.slope + root_model.intercept,
-                   1. * hp.num_leaf_models),
-          0.);
-      auto &pred_model = leaf_models[pred_leaf];
-      double pred_cdf = std::max(
-          std::min(training_sample[i] * pred_model.slope + pred_model.intercept,
-                   1.),
-          0.);
-
-      // Increment the percentile
-      percentile_estimations[pred_cdf * (hp.NUM_PERCENTILES - 1)] +=
-          scaling_factor;
     }
 
     // NOTE:
