@@ -7,6 +7,6 @@ then
 ./compile.sh
 fi
 
-echo "\033[34;1mDropping caches... \033[0m[Ctrl-C to skip]"
+echo -e "\033[34;1mDropping caches... \033[0m[Ctrl-C to skip]"
 sudo sh -c "sync; echo 1 > /proc/sys/vm/drop_caches"
 ${EXEC} --benchmark_display_aggregates_only
