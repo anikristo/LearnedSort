@@ -96,7 +96,7 @@ typedef double data_t;
 distr_t DATA_DISTR = NORMAL;
 
 // NOTE: You may change the input size here
-constexpr size_t INPUT_SZ = 100'000'000;
+constexpr size_t INPUT_SZ = 50'000'000;
 ```
 
 
@@ -128,32 +128,7 @@ typedef long data_t;
 const string DATASET = "NYC/Pickup";
 ```
 
-Below is a list of possible values for the `DATASET` variable grouped by the respective data types. 
-For more information regarding the datasets, their properties, and what they represent, please check out our [Wiki](TODO ) TODO. 
-
-__Decimal types (e.g. `double`)__: 
-* `Chic/Tot`
-* `NYC/Dist`
-* `NYC/Tot`
-* `Sof/Hum`
-* `Sof/Press`
-* `Sof/Temp`
-* `Stks/Low`
-* `Stks/Open`
-* `Stks/Vol`
-
-
-__Signed integer types (e.g. `long`)__: 
-* `Chic/Start`
-* `FB/IDs`
-* `NYC/Pickup`
-* `Stks/Date`
-* `Wiki/Edit`
-
-__Unigned integer types (e.g. `unsigned long`)__: 
-* `Books/Sales`
-* `OSM/Cell_IDs`
-
+For a list of possible values for the `DATASET` variable and their respective data types, please check out the `data/` folder. 
 
 # Benchmark results
 In the following sections we give concrete performance numbers for a particular server-grade computer. 

@@ -1,15 +1,13 @@
-#ifndef LEARNED_SORT_H
-#define LEARNED_SORT_H
+#pragma once
 
 /**
  * @file learned_sort.h
- * @author Ani Kristo (anikristo@gmail.com)
+ * @author Ani Kristo, Kapil Vaidya
  * @brief The purpose of this file is to provide an implementation of Learned
  Sort, a model-enhanced sorting algorithm.
- * @date 2020-05-02
  *
- * @copyright Copyright (c) 2020 Ani Kristo <anikristo@gmail.com>
- * @copyright Copyright (C) 2020 Kapil Vaidya <kapilv@mit.edu>
+ * @copyright Copyright (c) 2021 Ani Kristo <anikristo@gmail.com>
+ * @copyright Copyright (C) 2021 Kapil Vaidya <kapilv@mit.edu>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,867 +24,944 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <iterator>
-#include <map>
 #include <vector>
 
+#include "rmi.h"
+#include "utils.h"
+
 using namespace std;
+using namespace learned_sort;
 
 namespace learned_sort {
 
-// Helper functions for working with unsigned types
-template <typename T>
-inline T _get_key(T a) {
-  return a;
-}
-inline int _get_key(unsigned int a) { return static_cast<int>(a); }
-inline long _get_key(unsigned long a) { return static_cast<long>(a); }
-
-// A training point struct, which packs the key and its respective scaled CDF
-// value
-template <typename T>
-struct training_point {
-  // Key value
-  T x;
-
-  // The scaled CDF (a.k.a the position in the sorted sample, divided by the
-  // sample size)
-  double y;
-};
-
-template <class T>
-class TwoLayerRMI {
- public:
-  // Individual linear models
-  struct linear_model {
-    double slope = 0;
-    double intercept = 0;
-  };
-
-  // CDF model hyperparameters
-  struct Params {
-    // Member fields
-    size_t batch_sz;
-    size_t fanout;
-    float overallocation_ratio;
-    float sampling_rate;
-    size_t threshold;
-    vector<size_t> arch;
-
-    // Default hyperparameters
-    static constexpr size_t DEFAULT_BATCH_SZ = 10;
-    static constexpr size_t DEFAULT_FANOUT = 1e3;
-    static constexpr float DEFAULT_OVERALLOCATION_RATIO = 1.1;
-    static constexpr float DEFAULT_SAMPLING_RATE = .01;
-    static constexpr size_t DEFAULT_THRESHOLD = 100;
-    vector<size_t> DEFAULT_ARCH = {1, 1000};
-    static constexpr size_t MIN_SORTING_SIZE = 1e4;
-
-    // Default constructor
-    Params();
-
-    // Constructor with custom hyperparameter values
-    Params(float sampling_rate, float overallocation, size_t fanout,
-           size_t batch_size, size_t threshold, vector<size_t> model_arch);
-  };
-
-  // Member variables of the CDF model
-  bool trained;
-  vector<vector<linear_model>> models;
-  vector<T> training_sample;
-  Params hp;
-
-  // CDF model constructor
-  explicit TwoLayerRMI(Params p);
-};
-
-// Training function
-template <class RandomIt>
-TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> train(
-    RandomIt, RandomIt,
-    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
-        &);
-
-// Default comparison function [std::less()] and default hyperparameters
-// Drop-in replacement for std::sort()
-template <class RandomIt>
-void sort(RandomIt, RandomIt);
-
-// Default comparison function [std::less()] and custom hyperparameters
-template <class RandomIt>
-void sort(
-    RandomIt, RandomIt,
-    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
-        &);
-}  // namespace learned_sort
-
-using namespace learned_sort;
-
-template <class T>
-TwoLayerRMI<T>::Params::Params() {
-  this->batch_sz = DEFAULT_BATCH_SZ;
-  this->fanout = DEFAULT_FANOUT;
-  this->overallocation_ratio = DEFAULT_OVERALLOCATION_RATIO;
-  this->sampling_rate = DEFAULT_SAMPLING_RATE;
-  this->threshold = DEFAULT_THRESHOLD;
-  this->arch = DEFAULT_ARCH;
-}
-
-template <class T>
-TwoLayerRMI<T>::Params::Params(float sampling_rate, float overallocation,
-                               size_t fanout, size_t batch_sz, size_t threshold,
-                               vector<size_t> arch) {
-  this->batch_sz = batch_sz;
-  this->fanout = fanout;
-  this->overallocation_ratio = overallocation;
-  this->sampling_rate = sampling_rate;
-  this->threshold = threshold;
-  this->arch = std::move(arch);
-}
-
-template <class T>
-TwoLayerRMI<T>::TwoLayerRMI(Params p) {
-  this->trained = false;
-  this->hp = p;
-  this->models.resize(p.arch.size());
-
-  for (size_t layer_idx = 0; layer_idx < p.arch.size(); ++layer_idx) {
-    this->models[layer_idx].resize(p.arch[layer_idx]);
-  }
-}
-
-/**
- * @brief Train a CDF function with an RMI architecture, using linear spline
- * interpolation.
- *
- * @tparam RandomIt A bi-directional random iterator over the dataset
- * @tparam Compare  A comparison function to learn. If std::less, the predicted
- * order of keys will be the normal sorted order. Otherwise, if std::greater is
- * passed, the keys will be predicted in reverse sorting order.
- * @param begin Random-access iterators to the initial position of the sequence
- * to be used for sorting. The range used is [begin,end), which contains all the
- * elements between first and last, including the element pointed by first but
- * not the element pointed by last.
- * @param end Random-access iterators to the last position of the sequence to be
- * used for sorting. The range used is [begin,end), which contains all the
- * elements between first and last, including the element pointed by first but
- * not the element pointed by last.
- * @param comp Binary function that accepts two elements in the range as
- * arguments, and returns a value convertible to bool. The value returned
- * indicates whether the element passed as first argument is considered to go
- * before the second in the specific strict weak ordering it defines. The
- * function shall not modify any of its arguments. This can either be a function
- * pointer or a function object.
- * @param p The hyperparameters for the CDF model, which describe the
- * architecture and sampling ratio.
- * @return learned_sort::TwoLayerRMI The trained model which, given a key, will
- * output a value between [0,1] as a predicted CDF value.
- */
-template <class RandomIt>
-TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> learned_sort::train(
-    RandomIt begin, RandomIt end,
-    typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
-        &p) {
-  // Determine the data type
-  typedef typename iterator_traits<RandomIt>::value_type T;
-
-  // Determine input size
-  const size_t INPUT_SZ = std::distance(begin, end);
-
-  // Validate parameters
-  if (p.batch_sz >= INPUT_SZ) {
-    p.batch_sz = TwoLayerRMI<T>::Params::DEFAULT_BATCH_SZ;
-    cerr << "\33[93;1mWARNING\33[0m: Invalid batch size. Using default ("
-         << TwoLayerRMI<T>::Params::DEFAULT_BATCH_SZ << ")." << endl;
-  }
-
-  if (p.fanout >= INPUT_SZ) {
-    p.fanout = TwoLayerRMI<T>::Params::DEFAULT_FANOUT;
-    cerr << "\33[93;1mWARNING\33[0m: Invalid fanout. Using default ("
-         << TwoLayerRMI<T>::Params::DEFAULT_FANOUT << ")." << endl;
-  }
-
-  if (p.overallocation_ratio <= 1) {
-    p.overallocation_ratio =
-        TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO;
-    cerr << "\33[93;1mWARNING\33[0m: Invalid overallocation ratio. Using "
-            "default ("
-         << TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO << ")."
-         << endl;
-  }
-
-  if (p.sampling_rate <= 0 or p.sampling_rate > 1) {
-    p.sampling_rate = TwoLayerRMI<T>::Params::DEFAULT_SAMPLING_RATE;
-    cerr << "\33[93;1mWARNING\33[0m: Invalid sampling rate. Using default ("
-         << TwoLayerRMI<T>::Params::DEFAULT_SAMPLING_RATE << ")." << endl;
-  }
-
-  if (p.threshold <= 0 or p.threshold >= INPUT_SZ or
-      p.threshold >= INPUT_SZ / p.fanout) {
-    p.threshold = TwoLayerRMI<T>::Params::DEFAULT_THRESHOLD;
-    cerr << "\33[93;1mWARNING\33[0m: Invalid threshold. Using default ("
-         << TwoLayerRMI<T>::Params::DEFAULT_THRESHOLD << ")." << endl;
-  }
-
-  if (p.arch.size() > 2 or p.arch[0] != 1 or p.arch[1] <= 0) {
-    p.arch = p.DEFAULT_ARCH;
-    cerr << "\33[93;1mWARNING\33[0m: Invalid architecture. Using default {"
-         << p.DEFAULT_ARCH[0] << ", " << p.DEFAULT_ARCH[1] << "}." << endl;
-  }
-
-  // Initialize the CDF model
-  TwoLayerRMI<T> rmi(p);
-  static const size_t NUM_LAYERS = p.arch.size();
-  vector<vector<vector<training_point<T>>>> training_data(NUM_LAYERS);
-  for (size_t layer_idx = 0; layer_idx < NUM_LAYERS; ++layer_idx) {
-    training_data[layer_idx].resize(p.arch[layer_idx]);
-  }
-
-  //----------------------------------------------------------//
-  //                           SAMPLE                         //
-  //----------------------------------------------------------//
-
-  // Determine sample size
-  const size_t SAMPLE_SZ = std::min<size_t>(
-      INPUT_SZ, std::max<size_t>(p.sampling_rate * INPUT_SZ,
-                                 TwoLayerRMI<T>::Params::MIN_SORTING_SIZE));
-
-  // Create a sample array
-  rmi.training_sample.reserve(SAMPLE_SZ);
-
-  // Start sampling
-  size_t offset = static_cast<size_t>(1. * INPUT_SZ / SAMPLE_SZ);
-  for (auto i = begin; i < end; i += offset) {
-    // NOTE:  We don't directly assign SAMPLE_SZ to rmi.training_sample_sz
-    //        to avoid issues with divisibility
-    rmi.training_sample.push_back(*i);
-  }
-
-  // Sort the sample using the provided comparison function
-  std::sort(rmi.training_sample.begin(), rmi.training_sample.end());
-
-  // Count the number of unique keys
-  auto sample_cpy = rmi.training_sample;
-  auto num_unique_elms = std::distance(
-      sample_cpy.begin(), std::unique(sample_cpy.begin(), sample_cpy.end()));
-
-  // Stop early if the array has very few unique values. We need at least 2
-  // unique training examples per leaf model.
-  if (num_unique_elms < 2 * p.arch[1]) {
-    return rmi;
-  }
-
-  //----------------------------------------------------------//
-  //                     TRAIN THE MODELS                     //
-  //----------------------------------------------------------//
-
-  // Populate the training data for the root model
-  for (size_t i = 0; i < SAMPLE_SZ; ++i) {
-    training_data[0][0].push_back({rmi.training_sample[i], 1. * i / SAMPLE_SZ});
-  }
-
-  // Train the root model using linear interpolation
-  auto *current_training_data = &training_data[0][0];
-  typename TwoLayerRMI<T>::linear_model *current_model = &rmi.models[0][0];
-
-  // Find the min and max values in the training set
-  training_point<T> min = current_training_data->front();
-  training_point<T> max = current_training_data->back();
-
-  // Calculate the slope and intercept terms, assuming min.y = 0 and max.y
-  current_model->slope = 1. / (max.x - min.x);
-  current_model->intercept = -current_model->slope * min.x;
-
-  // Extrapolate for the number of models in the next layer
-  current_model->slope *= p.arch[1] - 1;
-  current_model->intercept *= p.arch[1] - 1;
-
-  // Populate the training data for the next layer
-  for (const auto &d : *current_training_data) {
-    // Predict the model index in next layer
-    size_t rank = current_model->slope * d.x + current_model->intercept;
-
-    // Normalize the rank between 0 and the number of models in the next layer
-    rank = std::max(static_cast<size_t>(0), std::min(p.arch[1] - 1, rank));
-
-    // Place the data in the predicted training bucket
-    training_data[1][rank].push_back(d);
-  }
-
-  // Train the leaf models
-  for (size_t model_idx = 0; model_idx < p.arch[1]; ++model_idx) {
-    // Update iterator variables
-    current_training_data = &training_data[1][model_idx];
-    current_model = &rmi.models[1][model_idx];
-
-    // Interpolate the min points in the training buckets
-    if (model_idx == 0) {
-      // The current model is the first model in the current layer
-
-      if (current_training_data->size() < 2) {
-        // Case 1: The first model in this layer is empty
-        current_model->slope = 0;
-        current_model->intercept = 0;
-
-        // Insert a fictive training point to avoid propagating more than one
-        // empty initial models.
-        training_point<T> tp;
-        tp.x = 0;
-        tp.y = 0;
-        current_training_data->push_back(tp);
-      } else {
-        // Case 2: The first model in this layer is not empty
-
-        min = current_training_data->front();
-        max = current_training_data->back();
-
-        // Hallucinating as if min.y = 0
-        current_model->slope = (1. * max.y) / (max.x - min.x);
-        current_model->intercept = min.y - current_model->slope * min.x;
-      }
-    } else if (model_idx == p.arch[1] - 1) {
-      if (current_training_data->empty()) {
-        // Case 3: The final model in this layer is empty
-
-        current_model->slope = 0;
-        current_model->intercept = 1;
-      } else {
-        // Case 4: The last model in this layer is not empty
-
-        min = training_data[1][model_idx - 1].back();
-        max = current_training_data->back();
-
-        // Hallucinating as if max.y = 1
-        current_model->slope = (1. - min.y) / (max.x - min.x);
-        current_model->intercept = min.y - current_model->slope * min.x;
-      }
-    } else {
-      // The current model is not the first model in the current layer
-
-      if (current_training_data->empty()) {
-        // Case 5: The intermediate model in this layer is empty
-        current_model->slope = 0;
-        current_model->intercept =
-            training_data[1][model_idx - 1].back().y;  // If the previous model
-                                                       // was empty too, it will
-                                                       // use the fictive
-                                                       // training points
-
-        // Insert a fictive training point to avoid propagating more than one
-        // empty initial models.
-        // NOTE: This will _NOT_ throw to DIV/0 due to identical x's and y's
-        // because it is working backwards.
-        training_point<T> tp;
-        tp.x = training_data[1][model_idx - 1].back().x;
-        tp.y = training_data[1][model_idx - 1].back().y;
-        current_training_data->push_back(tp);
-      } else {
-        // Case 6: The intermediate leaf model is not empty
-
-        min = training_data[1][model_idx - 1].back();
-        max = current_training_data->back();
-
-        current_model->slope = (max.y - min.y) / (max.x - min.x);
-        current_model->intercept = min.y - current_model->slope * min.x;
-      }
-    }
-  }
-
-  // NOTE:
-  // The last stage (layer) of this model contains weights that predict the CDF
-  // of the keys (i.e. Range is [0-1])
-  // When using this model to predict the position of the keys in the sorted
-  // order, you MUST scale the
-  // weights of the last layer to whatever range you are predicting for. The
-  // inner layers of the model have
-  // already been extrapolated to the length of the stage.git
-  //
-  // This is a design choice to help with the portability of the model.
-  //
-  rmi.trained = true;
-
-  return rmi;
-}  // end of training function
+// Parameters
+static constexpr int PRIMARY_FANOUT = 1000;
+static constexpr int SECONDARY_FANOUT = 100;
+static constexpr int PRIMARY_FRAGMENT_CAPACITY = 100;
+static constexpr int SECONDARY_FRAGMENT_CAPACITY = 100;
+static constexpr int REP_CNT_THRESHOLD = 5;
 
 template <class RandomIt>
-void _sort_trained(
-    RandomIt begin, RandomIt end,
-    TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
-  // Determine the data type
-  typedef typename iterator_traits<RandomIt>::value_type T;
-
-  // Cache runtime parameters
-  static const size_t BATCH_SZ = rmi.hp.batch_sz;
-  static const double OA_RATIO = rmi.hp.overallocation_ratio;
-  static const size_t FANOUT = rmi.hp.fanout;
-  static const size_t THRESHOLD = rmi.hp.threshold;
-
-  // Determine the input size
-  const size_t INPUT_SZ = std::distance(begin, end);
-
+void sort(RandomIt begin, RandomIt end,
+          TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> &rmi) {
   //----------------------------------------------------------//
   //                          INIT                            //
   //----------------------------------------------------------//
 
-  // Constants for buckets
-  const size_t MAJOR_BCKT_CAPACITY = INPUT_SZ / FANOUT;
+  // Determine the data type
+  typedef typename iterator_traits<RandomIt>::value_type T;
 
-  // Constants for repeated keys
-  const size_t TRAINING_SAMPLE_SZ = rmi.training_sample.size();
-  const size_t REP_CNT_THRESHOLD = TRAINING_SAMPLE_SZ / rmi.hp.arch[1];
+  // Constants
+  const long input_sz = std::distance(begin, end);
+  const long TRAINING_SAMPLE_SZ = rmi.training_sample.size();
 
-  // Initialize the spill bucket
-  vector<T> spill_bucket;
+  // Keeps track of the number of elements in each bucket
+  long primary_bucket_sizes[PRIMARY_FANOUT]{0};
 
-  // Initialize the buckets
-  vector<T> major_bckts(INPUT_SZ + 1);
-
-  // Array to keep track of the major bucket sizes
-  vector<size_t> major_bckt_sizes(FANOUT, 0);
-
-  // Stores the repeated keys detected during training
-  vector<T> rep_keys_in_training;
-
-  // Stores the keys that are repeated above the given threshold, and the count
-  // of how many times they are repeated in the input
-  map<T, size_t> rep_keys;
-
-  // Stores the total number of repeated keys in the input (aka non-unique keys)
-  size_t num_rep_keys = 0;
-
-  // Counts the nubmer of total elements that are in the buckets, hence
-  // INPUT_SZ - spill_bucket.size() at the end of the recursive bucketization
-  size_t num_elms_in_bckts = 0;
+  // Counts the number of elements that are done going through the
+  // partitioning steps for good
+  long num_elms_finalized = 0;
 
   // Cache the model parameters
-  auto root_slope = rmi.models[0][0].slope;
-  auto root_intrcpt = rmi.models[0][0].intercept;
-  size_t num_models = rmi.hp.arch[1];
-  vector<double> slopes, intercepts;
-  for (size_t i = 0; i < num_models; ++i) {
-    slopes.push_back(rmi.models[1][i].slope);
-    intercepts.push_back(rmi.models[1][i].intercept);
+  const long num_leaf_models = rmi.hp.num_leaf_models;
+  double root_slope = rmi.root_model.slope;
+  double root_intercept = rmi.root_model.intercept;
+  auto num_models = rmi.hp.num_leaf_models;
+  double slopes[num_leaf_models];
+  double intercepts[num_leaf_models];
+  for (auto i = 0; i < num_leaf_models; ++i) {
+    slopes[i] = rmi.leaf_models[i].slope;
+    intercepts[i] = rmi.leaf_models[i].intercept;
   }
 
   //----------------------------------------------------------//
-  //       DETECT REPEATED KEYS IN THE TRAINING SAMPLE        //
+  //              PARTITION THE KEYS INTO BUCKETS             //
   //----------------------------------------------------------//
 
-  // Count the occurrences of equal keys
-  size_t cnt_rep_keys = 1;
-  for (size_t i = 1; i < TRAINING_SAMPLE_SZ; i++) {
-    if (rmi.training_sample[i] == rmi.training_sample[i - 1]) {
-      ++cnt_rep_keys;
-    } else {
-      // New values start here. Reset counter. Add value in the
-      // rep_keys_in_training if above threshold
-      if (cnt_rep_keys > REP_CNT_THRESHOLD) {
-        rep_keys_in_training.push_back(rmi.training_sample[i - 1]);
-      }
-      cnt_rep_keys = 1;
-    }
-  }
+  {
+    // Keeps track of the number of elements in each fragment
+    long fragment_sizes[PRIMARY_FANOUT]{0};
 
-  if (cnt_rep_keys > REP_CNT_THRESHOLD) {
-    // Accounting for the last iter in the for-loop above
-    rep_keys_in_training.push_back(rmi.training_sample[TRAINING_SAMPLE_SZ - 1]);
-  }
+    // An auxiliary set of fragments where the elements will be partitioned
+    auto fragments = new T[PRIMARY_FANOUT][PRIMARY_FRAGMENT_CAPACITY];
 
-  //----------------------------------------------------------//
-  //             SHUFFLE THE KEYS INTO BUCKETS                //
-  //----------------------------------------------------------//
+    // Keeps track of the number of fragments that have been written back to the
+    // original array
+    long fragments_written = 0;
 
-  // For each repeated key that was found in the training sample, predict the
-  // bucket. Save the repeated keys and counts in rep_keys
-  int pred_rank = 0;
-  double pred_cdf = 0.;
-  for (size_t elm_idx = 0; elm_idx < rep_keys_in_training.size(); ++elm_idx) {
-    pred_rank = static_cast<int>(std::max(
-        0.,
-        std::min(num_models - 1.,
-                 root_slope * rep_keys_in_training[elm_idx] + root_intrcpt)));
-    pred_cdf = slopes[pred_rank] * rep_keys_in_training[elm_idx] +
-               intercepts[pred_rank];
-    pred_rank = static_cast<int>(
-        std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
+    // Points to the next free space where to write back
+    auto write_itr = begin;
 
-    rep_keys.emplace(rep_keys_in_training[elm_idx], 0);
-  }
-
-  if (rep_keys_in_training.size() == 0) {
-    // No significantly repeated keys in the sample
-    pred_rank = 0;
-
-    // Process each key in order
-    for (auto iter = begin; iter < end; ++iter) {
-      auto cur_key = _get_key(iter[0]);
-
-      // Predict the model idx in the leaf layer
-      pred_rank = static_cast<int>(std::max(
-          0., std::min(num_models - 1., root_slope * cur_key + root_intrcpt)));
+    // For each element in the input, predict which bucket it would go to, and
+    // insert to the respective bucket fragment
+    for (auto it = begin; it != end; ++it) {
+      // Predict the model id in the leaf layer of the RMI
+      long pred_bucket_idx = static_cast<long>(std::max(
+          0.,
+          std::min(num_leaf_models - 1., root_slope * it[0] + root_intercept)));
 
       // Predict the CDF
-      pred_cdf = slopes[pred_rank] * cur_key + intercepts[pred_rank];
+      double pred_cdf =
+          slopes[pred_bucket_idx] * it[0] + intercepts[pred_bucket_idx];
 
-      // Scale the CDF to the number of buckets
-      pred_rank = static_cast<int>(
-          std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
+      // Get the predicted bucket id
+      pred_bucket_idx = static_cast<long>(std::max(
+          0., std::min(PRIMARY_FANOUT - 1., pred_cdf * PRIMARY_FANOUT)));
 
-      if (major_bckt_sizes[pred_rank] <
-          MAJOR_BCKT_CAPACITY) {  // The predicted bucket is not full
-        major_bckts[MAJOR_BCKT_CAPACITY * pred_rank +
-                    major_bckt_sizes[pred_rank]] = cur_key;
+      // Place the current element in the predicted fragment
+      fragments[pred_bucket_idx][fragment_sizes[pred_bucket_idx]] = it[0];
 
-        // Update the bucket size
-        ++major_bckt_sizes[pred_rank];
-      } else {  // The predicted bucket is full, place in the spill bucket
-        spill_bucket.push_back(cur_key);
-      }
-    }
-  } else {  // There are many repeated keys in the sample
+      // Update the fragment size and the bucket size
+      primary_bucket_sizes[pred_bucket_idx]++;
+      fragment_sizes[pred_bucket_idx]++;
 
-    // Process each element in the batch and save their predicted indices
-    for (auto iter = begin; iter < end; ++iter) {
-      auto cur_key = _get_key(iter[0]);
+      if (fragment_sizes[pred_bucket_idx] == PRIMARY_FRAGMENT_CAPACITY) {
+        fragments_written++;
+        // The predicted fragment is full, place in the array and update bucket
+        // size
+        std::move(fragments[pred_bucket_idx],
+                  fragments[pred_bucket_idx] + PRIMARY_FRAGMENT_CAPACITY,
+                  write_itr);
+        write_itr += PRIMARY_FRAGMENT_CAPACITY;
 
-      // Predict the model idx in the leaf layer
-      pred_rank = static_cast<int>(std::max(
-          0., std::min(num_models - 1., root_slope * cur_key + root_intrcpt)));
-
-      // Predict the CDF
-      pred_cdf = slopes[pred_rank] * cur_key + intercepts[pred_rank];
-
-      // Scale the CDF to the number of buckets
-      pred_rank = static_cast<int>(
-          std::max(0., std::min(FANOUT - 1., pred_cdf * FANOUT)));
-
-      // If the current key is in the rep_keys, update the counts and flag it
-      auto it = rep_keys.find(cur_key);
-      if (it != rep_keys.end()) {
-        it->second++;
-        ++num_rep_keys;
-
-      } else {
-        // No repeated key was detected, so place in bucket
-
-        // Check if the element will cause a bucket overflow
-        if (major_bckt_sizes[pred_rank] < MAJOR_BCKT_CAPACITY) {
-          // The predicted bucket is not full
-          major_bckts[MAJOR_BCKT_CAPACITY * pred_rank +
-                      major_bckt_sizes[pred_rank]] = cur_key;
-
-          // Update the bucket size
-          ++major_bckt_sizes[pred_rank];
-        } else {  // The predicted bucket is full, place in the spill bucket
-          spill_bucket.push_back(cur_key);
-        }
-      }
-    }
-  }
-
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-  //               Second round of shuffling                  //
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-
-  size_t NUM_MINOR_BCKT_PER_MAJOR_BCKT = std::max(
-      1u, static_cast<unsigned>(MAJOR_BCKT_CAPACITY * OA_RATIO / THRESHOLD));
-  const size_t TOT_NUM_MINOR_BCKTS = NUM_MINOR_BCKT_PER_MAJOR_BCKT * FANOUT;
-
-  vector<T> minor_bckts(NUM_MINOR_BCKT_PER_MAJOR_BCKT * THRESHOLD);
-
-  // Stores the index where the current bucket will start
-  int bckt_start_offset = 0;
-
-  // Stores the predicted CDF values for the elements in the current bucket
-  size_t pred_idx_cache[THRESHOLD];
-
-  // Caches the predicted bucket indices for each element in the batch
-  vector<size_t> batch_cache(BATCH_SZ, 0);
-
-  // Array to keep track of sizes for the minor buckets in the current
-  // bucket
-  vector<size_t> minor_bckt_sizes(NUM_MINOR_BCKT_PER_MAJOR_BCKT, 0);
-
-  // Iterate over each major bucket
-  for (size_t major_bckt_idx = 0; major_bckt_idx < FANOUT; ++major_bckt_idx) {
-    // Update the bucket start offset
-    bckt_start_offset = major_bckt_idx * MAJOR_BCKT_CAPACITY;
-
-    // Reset minor_bckt_sizes to all zeroes for the current major bucket
-    fill(minor_bckt_sizes.begin(), minor_bckt_sizes.end(), 0);
-
-    // Find out the number of batches for this bucket
-    size_t num_batches = major_bckt_sizes[major_bckt_idx] / BATCH_SZ;
-
-    // Iterate over the elements in the current bucket in batch-mode
-    for (size_t batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
-      // Iterate over the elements in the batch and store their predicted
-      // ranks
-      for (size_t elm_idx = 0; elm_idx < BATCH_SZ; ++elm_idx) {
-        // Find the current element
-        auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
-
-        // Predict the leaf-layer model
-        batch_cache[elm_idx] = static_cast<int>(std::max(
-            0.,
-            std::min(num_models - 1., root_slope * cur_elm + root_intrcpt)));
-
-        // Predict the CDF
-        pred_cdf = slopes[batch_cache[elm_idx]] * cur_elm +
-                   intercepts[batch_cache[elm_idx]];
-
-        // Scale the predicted CDF to the number of minor buckets and cache it
-        batch_cache[elm_idx] = static_cast<int>(std::max(
-            0., std::min(NUM_MINOR_BCKT_PER_MAJOR_BCKT - 1.,
-                         pred_cdf * TOT_NUM_MINOR_BCKTS -
-                             major_bckt_idx * NUM_MINOR_BCKT_PER_MAJOR_BCKT)));
-      }
-
-      // Iterate over the elements in the batch again, and place them in the
-      // sub-buckets, or spill bucket
-      for (size_t elm_idx = 0; elm_idx < BATCH_SZ; ++elm_idx) {
-        // Find the current element
-        auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
-
-        // Check if the element will cause a bucket overflow
-        if (minor_bckt_sizes[batch_cache[elm_idx]] <
-            THRESHOLD) {  // The predicted bucket has not reached
-          // full capacity, so place the element in
-          // the bucket
-          minor_bckts[THRESHOLD * batch_cache[elm_idx] +
-                      minor_bckt_sizes[batch_cache[elm_idx]]] = cur_elm;
-          ++minor_bckt_sizes[batch_cache[elm_idx]];
-        } else {  // Place the item in the spill bucket
-          spill_bucket.push_back(cur_elm);
-        }
-      }
-
-      // Update the start offset
-      bckt_start_offset += BATCH_SZ;
-    }
-
-    //-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -//
-    // Repeat the above for the rest of the elements in the     //
-    // current bucket in case its size wasn't divisible by      //
-    // the BATCH_SZ                                             //
-    //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-    size_t num_remaining_elm =
-        major_bckt_sizes[major_bckt_idx] - num_batches * BATCH_SZ;
-
-    for (size_t elm_idx = 0; elm_idx < num_remaining_elm; ++elm_idx) {
-      auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
-      batch_cache[elm_idx] = static_cast<int>(std::max(
-          0., std::min(num_models - 1., root_slope * cur_elm + root_intrcpt)));
-      pred_cdf = slopes[batch_cache[elm_idx]] * cur_elm +
-                 intercepts[batch_cache[elm_idx]];
-      batch_cache[elm_idx] = static_cast<int>(std::max(
-          0., std::min(NUM_MINOR_BCKT_PER_MAJOR_BCKT - 1.,
-                       pred_cdf * TOT_NUM_MINOR_BCKTS -
-                           major_bckt_idx * NUM_MINOR_BCKT_PER_MAJOR_BCKT)));
-    }
-
-    for (unsigned elm_idx = 0; elm_idx < num_remaining_elm; ++elm_idx) {
-      auto cur_elm = _get_key(major_bckts[bckt_start_offset + elm_idx]);
-      if (minor_bckt_sizes[batch_cache[elm_idx]] < THRESHOLD) {
-        minor_bckts[THRESHOLD * batch_cache[elm_idx] +
-                    minor_bckt_sizes[batch_cache[elm_idx]]] = cur_elm;
-        ++minor_bckt_sizes[batch_cache[elm_idx]];
-      } else {
-        spill_bucket.push_back(cur_elm);
+        // Reset the fragment size
+        fragment_sizes[pred_bucket_idx] = 0;
       }
     }
 
     //----------------------------------------------------------//
-    //                MODEL-BASED COUNTING SORT                 //
+    //                     DEFRAGMENTATION                      //
     //----------------------------------------------------------//
 
-    // Iterate over the minor buckets of the current bucket
-    for (size_t bckt_idx = 0; bckt_idx < NUM_MINOR_BCKT_PER_MAJOR_BCKT;
-         ++bckt_idx) {
-      if (minor_bckt_sizes[bckt_idx] > 0) {
-        // Update the bucket start offset
-        bckt_start_offset =
-            1. * (major_bckt_idx * NUM_MINOR_BCKT_PER_MAJOR_BCKT + bckt_idx) *
-            INPUT_SZ / TOT_NUM_MINOR_BCKTS;
+    // Records the ending offset for the buckets
+    long bucket_end_offset[PRIMARY_FANOUT]{0};
+    bucket_end_offset[0] = primary_bucket_sizes[0];
 
-        // Count array for the model-enhanced counting sort subroutine
-        vector<size_t> cnt_hist(THRESHOLD, 0);
+    // Swap space
+    T *swap_buffer = new T[PRIMARY_FRAGMENT_CAPACITY];
 
-        /*
-         * OPTIMIZATION
-         * We check to see if the first and last element in the current bucket
-         * used the same leaf model to obtain their CDF. If that is the case,
-         * then we don't need to traverse the CDF model for every element in
-         * this bucket, hence decreasing the inference complexity from
-         * O(num_layer) to O(1).
-         */
+    // Maintains a writing iterator for each bucket, initialized at the starting
+    // offsets
+    long bucket_write_off[PRIMARY_FANOUT]{0};
+    bucket_write_off[0] = 0;
 
-        int pred_model_first_elm = static_cast<int>(std::max(
-            0., std::min(num_models - 1.,
-                         root_slope * minor_bckts[bckt_idx * THRESHOLD] +
-                             root_intrcpt)));
+    // Calculate the starting and ending offsets of each bucket
+    for (long bucket_idx = 1; bucket_idx < PRIMARY_FANOUT; ++bucket_idx) {
+      // Calculate the bucket end offsets (prefix sum)
+      bucket_end_offset[bucket_idx] =
+          primary_bucket_sizes[bucket_idx] + bucket_end_offset[bucket_idx - 1];
 
-        int pred_model_last_elm = static_cast<int>(std::max(
-            0.,
-            std::min(num_models - 1.,
-                     root_slope * minor_bckts[bckt_idx * THRESHOLD +
-                                              minor_bckt_sizes[bckt_idx] - 1] +
-                         root_intrcpt)));
+      // Calculate the bucket start offsets and assign the writing iterator to
+      // that value
 
-        if (pred_model_first_elm ==
-            pred_model_last_elm) {  // Avoid CDF model traversal and predict the
-          // CDF only using the leaf model
+      // These offsets are aligned w.r.t. PRIMARY_FRAGMENT_CAPACITY
+      bucket_write_off[bucket_idx] = ceil(bucket_end_offset[bucket_idx - 1] *
+                                          1. / PRIMARY_FRAGMENT_CAPACITY) *
+                                     PRIMARY_FRAGMENT_CAPACITY;
 
-          // Iterate over the elements and place them into the minor buckets
-          for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
-               ++elm_idx) {
-            // Find the current element
-            auto cur_elm =
-                _get_key(minor_bckts[bckt_idx * THRESHOLD + elm_idx]);
-
-            // Predict the CDF
-            pred_cdf = slopes[pred_model_first_elm] * cur_elm +
-                       intercepts[pred_model_first_elm];
-
-            // Scale the predicted CDF to the input size and cache it
-            pred_idx_cache[elm_idx] = static_cast<int>(std::max(
-                0., std::min(THRESHOLD - 1.,
-                             (pred_cdf * INPUT_SZ) - bckt_start_offset)));
-
-            // Update the counts
-            ++cnt_hist[pred_idx_cache[elm_idx]];
-          }
-        } else {  // Fully traverse the CDF model again to predict the CDF of
-                  // the
-          // current element
-
-          // Iterate over the elements and place them into the minor buckets
-          for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
-               ++elm_idx) {
-            // Find the current element
-            auto cur_elm =
-                _get_key(minor_bckts[bckt_idx * THRESHOLD + elm_idx]);
-
-            // Predict the model idx in the leaf layer
-            auto model_idx_next_layer = static_cast<int>(
-                std::max(0., std::min(num_models - 1.,
-                                      root_slope * cur_elm + root_intrcpt)));
-            // Predict the CDF
-            pred_cdf = slopes[model_idx_next_layer] * cur_elm +
-                       intercepts[model_idx_next_layer];
-
-            // Scale the predicted CDF to the input size and cache it
-            pred_idx_cache[elm_idx] = static_cast<size_t>(std::max(
-                0., std::min(THRESHOLD - 1.,
-                             (pred_cdf * INPUT_SZ) - bckt_start_offset)));
-
-            // Update the counts
-            ++cnt_hist[pred_idx_cache[elm_idx]];
-          }
-        }
-
-        --cnt_hist[0];
-
-        // Calculate the running totals
-        for (size_t cnt_idx = 1; cnt_idx < THRESHOLD; ++cnt_idx) {
-          cnt_hist[cnt_idx] += cnt_hist[cnt_idx - 1];
-        }
-
-        // Re-shuffle the elms based on the calculated cumulative counts
-        for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
-             ++elm_idx) {
-          // Place the element in the predicted position in the array
-          major_bckts[num_elms_in_bckts + cnt_hist[pred_idx_cache[elm_idx]]] =
-              minor_bckts[bckt_idx * THRESHOLD + elm_idx];
-          // Update counts
-          --cnt_hist[pred_idx_cache[elm_idx]];
-        }
-
-        //----------------------------------------------------------//
-        //                  TOUCH-UP & COMPACTION                   //
-        //----------------------------------------------------------//
-
-        // After the model-based bucketization process is done, switch to a
-        // deterministic sort
-        T elm;
-        int cmp_idx;
-
-        // Perform Insertion Sort
-        for (size_t elm_idx = 0; elm_idx < minor_bckt_sizes[bckt_idx];
-             ++elm_idx) {
-          cmp_idx = num_elms_in_bckts + elm_idx - 1;
-          elm = major_bckts[num_elms_in_bckts + elm_idx];
-          while (cmp_idx >= 0 && elm < major_bckts[cmp_idx]) {
-            major_bckts[cmp_idx + 1] = major_bckts[cmp_idx];
-            --cmp_idx;
-          }
-
-          major_bckts[cmp_idx + 1] = elm;
-        }
-
-        num_elms_in_bckts += minor_bckt_sizes[bckt_idx];
-      }  // end of iteration of each minor bucket
-    }
-  }  // end of iteration over each major bucket
-
-  //----------------------------------------------------------//
-  //                 SORT THE SPILL BUCKET                    //
-  //----------------------------------------------------------//
-
-  std::sort(spill_bucket.begin(), spill_bucket.end());
-
-  //----------------------------------------------------------//
-  //               MERGE BACK INTO ORIGINAL ARRAY             //
-  //----------------------------------------------------------//
-
-  // Merge the spill bucket with the elements in the buckets
-  std::merge(major_bckts.begin(), major_bckts.begin() + num_elms_in_bckts,
-             spill_bucket.begin(), spill_bucket.end(), begin + num_rep_keys);
-
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-  //                 Merge the repeated keys                  //
-  //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
-
-  // The read index for the exceptions
-  auto rep_it = rep_keys.begin();
-
-  // The read index for the already-merged elements from the buckets and the
-  // spill bucket
-  size_t input_idx = num_rep_keys;
-
-  // The write index for the final merging of everything
-  int write_idx = 0;
-
-  while (input_idx < INPUT_SZ && rep_it != rep_keys.end()) {
-    if (begin[input_idx] < rep_it->first) {
-      begin[write_idx] = begin[input_idx];
-      ++write_idx;
-      ++input_idx;
-    } else {
-      for (size_t i = 0; i < rep_it->second; ++i) {
-        begin[write_idx + i] = rep_it->first;
+      // Fence the bucket iterator. This might occur because the write offset is
+      // not necessarily aligned with PRIMARY_FRAGMENT_CAPACITY
+      if (bucket_write_off[bucket_idx] > bucket_end_offset[bucket_idx]) {
+        bucket_write_off[bucket_idx] = bucket_end_offset[bucket_idx];
       }
-      write_idx += rep_it->second;
-      ++rep_it;
     }
-  }
 
-  while (rep_it != rep_keys.end()) {
-    for (size_t i = 0; i < rep_it->second; ++i) {
-      begin[write_idx + i] = rep_it->first;
+    // This keeps track of which bucket we are operating on
+    long stored_bucket_idx = 0;
+
+    // Go over each fragment and re-arrange them so that they are placed
+    // contiguously within each bucket boundaries
+    for (long fragment_idx = 0; fragment_idx < fragments_written;
+         ++fragment_idx) {
+      auto cur_fragment_start_off = fragment_idx * PRIMARY_FRAGMENT_CAPACITY;
+
+      // Find the bucket where this fragment is stored into, which is not
+      // necessarily the bucket it belongs to
+      while (cur_fragment_start_off >= bucket_end_offset[stored_bucket_idx]) {
+        ++stored_bucket_idx;
+      }
+
+      // Skip this fragment if its starting index is lower than the writing
+      // offset for the current bucket. This means that the fragment has already
+      // been dealt with
+      if (cur_fragment_start_off < bucket_write_off[stored_bucket_idx]) {
+        continue;
+      }
+
+      // Find out what bucket the current fragment belongs to by looking at RMI
+      // prediction for the first element of the fragment.
+      auto first_elm_in_fragment = begin[cur_fragment_start_off];
+      long pred_bucket_for_cur_fragment = static_cast<long>(std::max(
+          0., std::min(num_leaf_models - 1.,
+                       root_slope * first_elm_in_fragment + root_intercept)));
+
+      // Predict the CDF
+      double pred_cdf =
+          slopes[pred_bucket_for_cur_fragment] * first_elm_in_fragment +
+          intercepts[pred_bucket_for_cur_fragment];
+
+      // Get the predicted bucket id
+      pred_bucket_for_cur_fragment = static_cast<long>(std::max(
+          0., std::min(PRIMARY_FANOUT - 1., pred_cdf * PRIMARY_FANOUT)));
+
+      // If the current bucket contains fragments that are not all the way full,
+      // no need to use a swap buffer, since there is available space. The first
+      // condition checks whether the current fragment will need to be written
+      // in a bucket that was already consumed. The second condition checks
+      // whether the writing offset of the predicted bucket is beyond the last
+      // element written into the array. This means that there is empty space to
+      // write the fragments to.
+      if (bucket_write_off[pred_bucket_for_cur_fragment] <
+              cur_fragment_start_off ||
+          bucket_write_off[pred_bucket_for_cur_fragment] >=
+              fragments_written * PRIMARY_FRAGMENT_CAPACITY) {
+        // If the current fragment will not be the last one to write in the
+        // predicted bucket
+        if (bucket_write_off[pred_bucket_for_cur_fragment] +
+                PRIMARY_FRAGMENT_CAPACITY <=
+            bucket_end_offset[pred_bucket_for_cur_fragment]) {
+          auto write_itr =
+              begin + bucket_write_off[pred_bucket_for_cur_fragment];
+          auto read_itr = begin + cur_fragment_start_off;
+
+          // Move the elements of the fragment to the bucket's write offset
+          std::copy(read_itr, read_itr + PRIMARY_FRAGMENT_CAPACITY, write_itr);
+
+          // Update the bucket write offset
+          bucket_write_off[pred_bucket_for_cur_fragment] +=
+              PRIMARY_FRAGMENT_CAPACITY;
+
+        } else {  // This is the last fragment to write into the predicted
+                  // bucket
+          auto write_itr =
+              begin + bucket_write_off[pred_bucket_for_cur_fragment];
+          auto read_itr = begin + cur_fragment_start_off;
+
+          // Calculate the fragment size
+          auto cur_fragment_sz =
+              bucket_end_offset[pred_bucket_for_cur_fragment] -
+              bucket_write_off[pred_bucket_for_cur_fragment];
+
+          // Move the elements of the fragment to the bucket's write offset
+          std::copy(read_itr, read_itr + cur_fragment_sz, write_itr);
+
+          // Update the bucket write offset for the predicted bucket
+          bucket_write_off[pred_bucket_for_cur_fragment] =
+              bucket_end_offset[pred_bucket_for_cur_fragment];
+
+          // Place the remaining elements of this fragment into the auxiliary
+          // fragment memory. This is needed when the start of the bucket might
+          // have empty spaces because the writing iterator was not aligned with
+          // FRAGMENT_CAPACITY (not a multiple)
+          for (int elm_idx = cur_fragment_sz;
+               elm_idx < PRIMARY_FRAGMENT_CAPACITY; elm_idx++) {
+            fragments[pred_bucket_for_cur_fragment]
+                     [fragment_sizes[pred_bucket_for_cur_fragment] + elm_idx -
+                      cur_fragment_sz] = read_itr[elm_idx];
+          }
+
+          // Update the auxiliary fragment size
+          fragment_sizes[pred_bucket_for_cur_fragment] +=
+              PRIMARY_FRAGMENT_CAPACITY - cur_fragment_sz;
+        }
+
+      } else {  // The current fragment is to be written in a non-empty space,
+                // so an incumbent fragment will need to be evicted
+
+        // If the fragment is already within the correct bucket
+        if (pred_bucket_for_cur_fragment == stored_bucket_idx) {
+          // If the empty area left in the bucket is not enough for all the
+          // elements in the fragment. This is needed when the start of the
+          // bucket might have empty spaces because the writing iterator was not
+          // aligned with FRAGMENT_CAPACITY (not a multiple)
+          if (bucket_end_offset[stored_bucket_idx] -
+                  bucket_write_off[stored_bucket_idx] <
+              PRIMARY_FRAGMENT_CAPACITY) {
+            auto write_itr = begin + bucket_write_off[stored_bucket_idx];
+            auto read_itr = begin + cur_fragment_start_off;
+
+            // Calculate the amount of space left for the current bucket
+            long remaining_space = bucket_end_offset[stored_bucket_idx] -
+                                   bucket_write_off[stored_bucket_idx];
+
+            // Write out the fragment in the remaining space
+            std::copy(read_itr, read_itr + remaining_space, write_itr);
+
+            // Update the read iterator to point to the remaining elements
+            read_itr = begin + cur_fragment_start_off + remaining_space;
+
+            // Calculate the fragment size
+            auto cur_fragment_sz = fragment_sizes[stored_bucket_idx];
+
+            // Write the remaining elements into the auxiliary fragment space
+            for (int k = 0; k < PRIMARY_FRAGMENT_CAPACITY - remaining_space;
+                 ++k) {
+              fragments[stored_bucket_idx][cur_fragment_sz++] = *(read_itr++);
+            }
+
+            // Update the fragment size after the new placements
+            fragment_sizes[stored_bucket_idx] = cur_fragment_sz;
+
+            // Update the bucket write offset to indicate that the bucket was
+            // fully written
+            bucket_write_off[stored_bucket_idx] =
+                bucket_end_offset[stored_bucket_idx];
+
+          } else {  // The bucket has enough space for the incoming fragment
+
+            auto write_itr = begin + bucket_write_off[stored_bucket_idx];
+            auto read_itr = begin + cur_fragment_start_off;
+
+            if (write_itr != read_itr) {
+              // Write the elements to the bucket's write offset
+              std::copy(read_itr, read_itr + PRIMARY_FRAGMENT_CAPACITY,
+                        write_itr);
+            }
+
+            // Update the write offset for the current bucket
+            bucket_write_off[stored_bucket_idx] += PRIMARY_FRAGMENT_CAPACITY;
+          }
+        } else {  // The fragment is not in the correct bucket and needs to be
+          // swapped out with an incorrectly placed fragment there
+
+          // Predict the bucket of the fragment that will be swapped out
+          auto first_elm_in_fragment_to_be_swapped_out =
+              begin[bucket_write_off[pred_bucket_for_cur_fragment]];
+
+          long pred_bucket_for_fragment_to_be_swapped_out =
+              static_cast<long>(std::max(
+                  0., std::min(
+                          num_leaf_models - 1.,
+                          root_slope * first_elm_in_fragment_to_be_swapped_out +
+                              root_intercept)));
+
+          // Predict the CDF
+          double pred_cdf =
+              slopes[pred_bucket_for_fragment_to_be_swapped_out] *
+                  first_elm_in_fragment_to_be_swapped_out +
+              intercepts[pred_bucket_for_fragment_to_be_swapped_out];
+
+          // Get the predicted bucket idx
+          pred_bucket_for_fragment_to_be_swapped_out = static_cast<long>(
+              std::max(0., std::min(PRIMARY_FANOUT - 1.,
+                                    pred_cdf * PRIMARY_FANOUT)));
+
+          // If the fragment at the next write offset is not already in the
+          // right bucket, swap the fragments
+          if (pred_bucket_for_fragment_to_be_swapped_out !=
+              pred_bucket_for_cur_fragment) {
+            // Move the contents at the write offset into a swap buffer
+            auto itr_buf1 =
+                begin + bucket_write_off[pred_bucket_for_cur_fragment];
+            auto itr_buf2 = begin + cur_fragment_start_off;
+            std::copy(itr_buf1, itr_buf1 + PRIMARY_FRAGMENT_CAPACITY,
+                      swap_buffer);
+
+            // Write the contents of the incoming fragment
+            std::copy(itr_buf2, itr_buf2 + PRIMARY_FRAGMENT_CAPACITY, itr_buf1);
+
+            // Place the swap buffer into the emptied space
+            std::copy(swap_buffer, swap_buffer + PRIMARY_FRAGMENT_CAPACITY,
+                      itr_buf2);
+
+            pred_bucket_for_cur_fragment =
+                pred_bucket_for_fragment_to_be_swapped_out;
+          } else {  // The fragment at the write offset is already in the right
+                    // bucket
+            bucket_write_off[pred_bucket_for_cur_fragment] +=
+                PRIMARY_FRAGMENT_CAPACITY;
+          }
+
+          // Decrement the fragment index so that the newly swapped in fragment
+          // is not skipped over
+          --fragment_idx;
+        }
+      }
     }
-    write_idx += rep_it->first;
-    ++rep_it;
+
+    // Add the elements remaining in the auxiliary fragments to the buckets they
+    // belong to. This is for when the fragments weren't full and thus not
+    // flushed to the input array
+    for (long bucket_idx = 0; bucket_idx < PRIMARY_FANOUT; ++bucket_idx) {
+      // Set the writing offset to the beggining of the bucket
+      long write_off = bucket_end_offset[bucket_idx - 1];
+      if (bucket_idx == 0) {
+        write_off = 0;
+      }
+
+      // Add the elements left in the auxiliary fragments to the beggining of
+      // the predicted bucket, since it was not full
+      long elm_idx;
+      for (elm_idx = 0; (elm_idx < fragment_sizes[bucket_idx]) &&
+                        (write_off % PRIMARY_FRAGMENT_CAPACITY != 0);
+           ++elm_idx) {
+        begin[write_off++] = fragments[bucket_idx][elm_idx];
+      }
+
+      // Add the remaining elements from the auxiliary fragments to the end of
+      // the bucket it belongs to
+      write_off = bucket_end_offset[bucket_idx] - fragment_sizes[bucket_idx];
+      for (; elm_idx < fragment_sizes[bucket_idx]; ++elm_idx) {
+        begin[write_off + elm_idx] = fragments[bucket_idx][elm_idx];
+        ++bucket_write_off[bucket_idx];
+      }
+    }
+
+    // Cleanup
+    delete[] swap_buffer;
+    delete[] fragments;
   }
 
-  while (input_idx < INPUT_SZ) {
-    begin[write_idx] = begin[input_idx];
-    ++write_idx;
-    ++input_idx;
+  //----------------------------------------------------------//
+  //                SECOND ROUND OF PARTITIONING              //
+  //----------------------------------------------------------//
+
+  {
+    // Iterate over each bucket starting from the end so that the merging step
+    // later is done in-place
+    auto primary_bucket_start = begin;
+    auto primary_bucket_end = begin;
+    for (long primary_bucket_idx = 0; primary_bucket_idx < PRIMARY_FANOUT;
+         ++primary_bucket_idx) {
+      auto primary_bucket_sz = primary_bucket_sizes[primary_bucket_idx];
+
+      // Skip bucket if empty
+      if (primary_bucket_sz == 0) continue;
+
+      // Update the start and the end of the bucket data
+      primary_bucket_start = primary_bucket_end;
+      primary_bucket_end += primary_bucket_sz;
+
+      // Check for homogeneity
+      bool is_homogeneous = true;
+      if (rmi.enable_dups_detection) {
+        for (long elm_idx = 1; elm_idx < primary_bucket_sz; ++elm_idx) {
+          if (primary_bucket_start[elm_idx] !=
+              primary_bucket_start[elm_idx - 1]) {
+            is_homogeneous = false;
+            break;
+          }
+        }
+      }
+
+      // When the bucket is homogeneous, skip sorting it
+      if (rmi.enable_dups_detection && is_homogeneous) {
+        num_elms_finalized += primary_bucket_sz;
+
+      }
+
+      // When the bucket is not homogeneous, and it's not flagged for duplicates
+      else {
+        //- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -//
+        //        PARTITION THE KEYS INTO SECONDARY BUCKETS         //
+        //- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -//
+
+        // Keeps track of the number of elements in each secondary bucket
+        long secondary_bucket_sizes[SECONDARY_FANOUT]{0};
+
+        // Keeps track of the number of elements in each fragment
+        long fragment_sizes[SECONDARY_FANOUT]{0};
+
+        // An auxiliary set of fragments where the elements will be partitioned
+        auto fragments = new T[SECONDARY_FANOUT][SECONDARY_FRAGMENT_CAPACITY];
+
+        // Keeps track of the number of fragments that have been written back to
+        // the original array
+        long fragments_written = 0;
+
+        // Points to the next free space where to write back
+        auto write_itr = primary_bucket_start;
+
+        // For each element in the input, predict which bucket it would go to,
+        // and insert to the respective bucket fragment
+        for (auto it = primary_bucket_start; it != primary_bucket_end; ++it) {
+          // Predict the model id in the leaf layer of the RMI
+          long pred_bucket_idx = static_cast<long>(
+              std::max(0., std::min(num_leaf_models - 1.,
+                                    root_slope * it[0] + root_intercept)));
+
+          // Predict the CDF
+          double pred_cdf =
+              slopes[pred_bucket_idx] * it[0] + intercepts[pred_bucket_idx];
+
+          // Get the predicted bucket id
+          pred_bucket_idx = static_cast<long>(std::max(
+              0., std::min(SECONDARY_FANOUT - 1.,
+                           (pred_cdf * PRIMARY_FANOUT - primary_bucket_idx) *
+                               SECONDARY_FANOUT)));
+
+          // Place the current element in the predicted fragment
+          fragments[pred_bucket_idx][fragment_sizes[pred_bucket_idx]] = it[0];
+
+          // Update the fragment size and the bucket size
+          ++secondary_bucket_sizes[pred_bucket_idx];
+          ++fragment_sizes[pred_bucket_idx];
+
+          if (fragment_sizes[pred_bucket_idx] == SECONDARY_FRAGMENT_CAPACITY) {
+            ++fragments_written;
+            // The predicted fragment is full, place in the array and update
+            // bucket size
+            std::move(fragments[pred_bucket_idx],
+                      fragments[pred_bucket_idx] + SECONDARY_FRAGMENT_CAPACITY,
+                      write_itr);
+            write_itr += SECONDARY_FRAGMENT_CAPACITY;
+
+            // Reset the fragment size
+            fragment_sizes[pred_bucket_idx] = 0;
+          }
+        }  // end of partitioninig over secondary fragments
+
+        //- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -//
+        //                      DEFRAGMENTATION                     //
+        //- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -//
+
+        // Records the ending offset for the buckets
+        long bucket_end_offset[SECONDARY_FANOUT]{0};
+        bucket_end_offset[0] = secondary_bucket_sizes[0];
+
+        // Swap space
+        T *swap_buffer = new T[SECONDARY_FRAGMENT_CAPACITY];
+
+        // Maintains a writing iterator for each bucket, initialized at the
+        // starting offsets
+        long bucket_start_off[SECONDARY_FANOUT]{0};
+        bucket_start_off[0] = 0;
+
+        // Calculate the starting and ending offsets of each bucket
+        for (long bucket_idx = 1; bucket_idx < SECONDARY_FANOUT; ++bucket_idx) {
+          // Calculate the bucket end offsets (prefix sum)
+          bucket_end_offset[bucket_idx] = secondary_bucket_sizes[bucket_idx] +
+                                          bucket_end_offset[bucket_idx - 1];
+
+          // Calculate the bucket start offsets and assign the writing
+          // iterator to that value
+
+          // These offsets are aligned w.r.t. SECONDARY_FRAGMENT_CAPACITY
+          bucket_start_off[bucket_idx] =
+              ceil(bucket_end_offset[bucket_idx - 1] * 1. /
+                   SECONDARY_FRAGMENT_CAPACITY) *
+              SECONDARY_FRAGMENT_CAPACITY;
+
+          // Fence the bucket iterator. This might occur because the write
+          // offset is not necessarily aligned with SECONDARY_FRAGMENT_CAPACITY
+          if (bucket_start_off[bucket_idx] > bucket_end_offset[bucket_idx]) {
+            bucket_start_off[bucket_idx] = bucket_end_offset[bucket_idx];
+          }
+        }
+
+        // This keeps track of which bucket we are operating on
+        long stored_bucket_idx = 0;
+
+        // Go over each fragment and re-arrange them so that they are placed
+        // contiguously within each bucket boundaries
+        for (long fragment_idx = 0; fragment_idx < fragments_written;
+             ++fragment_idx) {
+          auto cur_fragment_start_off =
+              fragment_idx * SECONDARY_FRAGMENT_CAPACITY;
+
+          // Find the bucket where this fragment is stored into, which is not
+          // necessarily the bucket it belongs to
+          while (cur_fragment_start_off >=
+                 bucket_end_offset[stored_bucket_idx]) {
+            ++stored_bucket_idx;
+          }
+
+          // Skip this fragment if its starting index is lower than the writing
+          // offset for the current bucket. This means that the fragment has
+          // already been dealt with
+          if (cur_fragment_start_off < bucket_start_off[stored_bucket_idx]) {
+            continue;
+          }
+
+          // Find out what bucket the current fragment belongs to by looking at
+          // RMI prediction for the first element of the fragment.
+          auto first_elm_in_fragment =
+              primary_bucket_start[cur_fragment_start_off];
+          long pred_bucket_for_cur_fragment = static_cast<long>(std::max(
+              0.,
+              std::min(num_leaf_models - 1.,
+                       root_slope * first_elm_in_fragment + root_intercept)));
+
+          // Predict the CDF
+          double pred_cdf =
+              slopes[pred_bucket_for_cur_fragment] * first_elm_in_fragment +
+              intercepts[pred_bucket_for_cur_fragment];
+
+          // Get the predicted bucket id
+          pred_bucket_for_cur_fragment = static_cast<long>(std::max(
+              0., std::min(SECONDARY_FANOUT - 1.,
+                           (pred_cdf * PRIMARY_FANOUT - primary_bucket_idx) *
+                               SECONDARY_FANOUT)));
+
+          // If the current bucket contains fragments that are not all the way
+          // full, no need to use a swap fragment, since there is available
+          // space. The first condition checks whether the current fragment will
+          // need to be written in a bucket that was already consumed. The
+          // second condition checks whether the writing offset of the
+          // predicted bucket is beyond the last element written into the
+          // array. This means that there is empty space to write the fragments
+          // to.
+          if (bucket_start_off[pred_bucket_for_cur_fragment] <
+                  cur_fragment_start_off ||
+              bucket_start_off[pred_bucket_for_cur_fragment] >=
+                  fragments_written * SECONDARY_FRAGMENT_CAPACITY) {
+            // If the current fragment will not be the last one to write in the
+            // predicted bucket
+            if (bucket_start_off[pred_bucket_for_cur_fragment] +
+                    SECONDARY_FRAGMENT_CAPACITY <=
+                bucket_end_offset[pred_bucket_for_cur_fragment]) {
+              auto write_itr = primary_bucket_start +
+                               bucket_start_off[pred_bucket_for_cur_fragment];
+              auto read_itr = primary_bucket_start + cur_fragment_start_off;
+
+              // Move the elements of the fragment to the bucket's write offset
+              std::copy(read_itr, read_itr + SECONDARY_FRAGMENT_CAPACITY,
+                        write_itr);
+
+              // Update the bucket write offset
+              bucket_start_off[pred_bucket_for_cur_fragment] +=
+                  SECONDARY_FRAGMENT_CAPACITY;
+
+            } else {  // This is the last fragment to write into the predicted
+                      // bucket
+              auto write_itr = primary_bucket_start +
+                               bucket_start_off[pred_bucket_for_cur_fragment];
+              auto read_itr = primary_bucket_start + cur_fragment_start_off;
+
+              // Calculate the fragment size
+              auto cur_fragment_sz =
+                  bucket_end_offset[pred_bucket_for_cur_fragment] -
+                  bucket_start_off[pred_bucket_for_cur_fragment];
+
+              // Move the elements of the fragment to the bucket's write offset
+              std::copy(read_itr, read_itr + cur_fragment_sz, write_itr);
+
+              // Update the bucket write offset for the predicted bucket
+              bucket_start_off[pred_bucket_for_cur_fragment] =
+                  bucket_end_offset[pred_bucket_for_cur_fragment];
+
+              // Place the remaining elements of this fragment into the
+              // auxiliary fragment memory. This is needed when the start of the
+              // bucket might have empty spaces because the writing iterator
+              // was not aligned with FRAGMENT_CAPACITY (not a multiple)
+              for (long elm_idx = cur_fragment_sz;
+                   elm_idx < SECONDARY_FRAGMENT_CAPACITY; elm_idx++) {
+                fragments[pred_bucket_for_cur_fragment]
+                         [fragment_sizes[pred_bucket_for_cur_fragment] +
+                          elm_idx - cur_fragment_sz] = read_itr[elm_idx];
+              }
+
+              // Update the auxiliary fragment size
+              fragment_sizes[pred_bucket_for_cur_fragment] +=
+                  SECONDARY_FRAGMENT_CAPACITY - cur_fragment_sz;
+            }
+
+          } else {  // The current fragment is to be written in a non-empty
+                    // space, so an incumbent fragment will need to be evicted
+
+            // If the fragment is already within the correct bucket
+            if (pred_bucket_for_cur_fragment == stored_bucket_idx) {
+              // If the empty area left in the bucket is not enough for all
+              // the elements in the fragment. This is needed when the start of
+              // the bucket might have empty spaces because the writing
+              // iterator was not aligned with FRAGMENT_CAPACITY (not a
+              // multiple)
+              if (bucket_end_offset[stored_bucket_idx] -
+                      bucket_start_off[stored_bucket_idx] <
+                  SECONDARY_FRAGMENT_CAPACITY) {
+                auto write_itr =
+                    primary_bucket_start + bucket_start_off[stored_bucket_idx];
+                auto read_itr = primary_bucket_start + cur_fragment_start_off;
+
+                // Calculate the amount of space left for the current bucket
+                long remaining_space = bucket_end_offset[stored_bucket_idx] -
+                                       bucket_start_off[stored_bucket_idx];
+
+                // Write out the fragment in the remaining space
+                std::copy(read_itr, read_itr + remaining_space, write_itr);
+
+                // Update the read iterator to point to the remaining elements
+                read_itr = primary_bucket_start + cur_fragment_start_off +
+                           remaining_space;
+
+                // Calculate the fragment size
+                auto cur_fragment_sz = fragment_sizes[stored_bucket_idx];
+
+                // Write the remaining elements into the auxiliary fragment
+                // space
+                for (int k = 0;
+                     k < SECONDARY_FRAGMENT_CAPACITY - remaining_space; ++k) {
+                  fragments[stored_bucket_idx][cur_fragment_sz++] =
+                      *(read_itr++);
+                }
+
+                // Update the fragment size after the new placements
+                fragment_sizes[stored_bucket_idx] = cur_fragment_sz;
+
+                // Update the bucket write offset to indicate that the bucket
+                // was fully written
+                bucket_start_off[stored_bucket_idx] =
+                    bucket_end_offset[stored_bucket_idx];
+
+              } else {  // The bucket has enough space for the incoming fragment
+
+                auto write_itr =
+                    primary_bucket_start + bucket_start_off[stored_bucket_idx];
+                auto read_itr = primary_bucket_start + cur_fragment_start_off;
+
+                if (write_itr != read_itr) {
+                  // Write the elements to the bucket's write offset
+                  std::copy(read_itr, read_itr + SECONDARY_FRAGMENT_CAPACITY,
+                            write_itr);
+                }
+
+                // Update the write offset for the current bucket
+                bucket_start_off[stored_bucket_idx] +=
+                    SECONDARY_FRAGMENT_CAPACITY;
+              }
+            } else {  // The fragment is not in the correct bucket and needs to
+                      // be
+              // swapped out with an incorrectly placed fragment there
+
+              // Predict the bucket of the fragment that will be swapped out
+              auto first_elm_in_fragment_to_be_swapped_out =
+                  primary_bucket_start
+                      [bucket_start_off[pred_bucket_for_cur_fragment]];
+
+              long pred_bucket_for_fragment_to_be_swapped_out =
+                  static_cast<long>(std::max(
+                      0.,
+                      std::min(
+                          num_leaf_models - 1.,
+                          root_slope * first_elm_in_fragment_to_be_swapped_out +
+                              root_intercept)));
+
+              // Predict the CDF
+              double pred_cdf =
+                  slopes[pred_bucket_for_fragment_to_be_swapped_out] *
+                      first_elm_in_fragment_to_be_swapped_out +
+                  intercepts[pred_bucket_for_fragment_to_be_swapped_out];
+
+              // Get the predicted bucket idx
+              pred_bucket_for_fragment_to_be_swapped_out = static_cast<long>(
+                  std::max(0., std::min(SECONDARY_FANOUT - 1.,
+                                        (pred_cdf * PRIMARY_FANOUT -
+                                         primary_bucket_idx) *
+                                            SECONDARY_FANOUT)));
+
+              // If the fragment at the next write offset is not already in the
+              // right bucket, swap the fragments
+              if (pred_bucket_for_fragment_to_be_swapped_out !=
+                  pred_bucket_for_cur_fragment) {
+                // Move the contents at the write offset into a swap fragment
+                auto itr_buf1 = primary_bucket_start +
+                                bucket_start_off[pred_bucket_for_cur_fragment];
+                auto itr_buf2 = primary_bucket_start + cur_fragment_start_off;
+                std::copy(itr_buf1, itr_buf1 + SECONDARY_FRAGMENT_CAPACITY,
+                          swap_buffer);
+
+                // Write the contents of the incoming fragment
+                std::copy(itr_buf2, itr_buf2 + SECONDARY_FRAGMENT_CAPACITY,
+                          itr_buf1);
+
+                // Place the swap buffer into the emptied space
+                std::copy(swap_buffer,
+                          swap_buffer + SECONDARY_FRAGMENT_CAPACITY, itr_buf2);
+
+                pred_bucket_for_cur_fragment =
+                    pred_bucket_for_fragment_to_be_swapped_out;
+              } else {  // The fragment at the write offset is already in the
+                        // right bucket
+                bucket_start_off[pred_bucket_for_cur_fragment] +=
+                    SECONDARY_FRAGMENT_CAPACITY;
+              }
+
+              // Decrement the fragment index so that the newly swapped in
+              // fragment is not skipped over
+              --fragment_idx;
+            }
+          }
+        }
+
+        // Add the elements remaining in the auxiliary fragments to the buckets
+        // they belong to. This is for when the fragments weren't full and thus
+        // not flushed to the input array
+        for (long bucket_idx = 0; bucket_idx < SECONDARY_FANOUT; ++bucket_idx) {
+          // Set the writing offset to the beggining of the bucket
+          long write_off = bucket_end_offset[bucket_idx - 1];
+          if (bucket_idx == 0) {
+            write_off = 0;
+          }
+
+          // Add the elements left in the auxiliary fragments to the beggining
+          // of the predicted bucket, since it was not full
+          long elm_idx;
+          for (elm_idx = 0; (elm_idx < fragment_sizes[bucket_idx]) &&
+                            (write_off % SECONDARY_FRAGMENT_CAPACITY != 0);
+               ++elm_idx) {
+            primary_bucket_start[write_off++] = fragments[bucket_idx][elm_idx];
+          }
+
+          // Add the remaining elements from the auxiliary fragments to the end
+          // of the bucket it belongs to
+          write_off =
+              bucket_end_offset[bucket_idx] - fragment_sizes[bucket_idx];
+          for (; elm_idx < fragment_sizes[bucket_idx]; ++elm_idx) {
+            primary_bucket_start[write_off + elm_idx] =
+                fragments[bucket_idx][elm_idx];
+            ++bucket_start_off[bucket_idx];
+          }
+        }
+
+        // Cleanup
+        delete[] swap_buffer;
+        delete[] fragments;
+
+        //- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -//
+        //                MODEL-BASED COUNTING SORT                 //
+        //- - - - - - - - - - - - - - - - - - - - - - - - - - - -  -//
+        // Iterate over the secondary buckets
+        for (long secondary_bucket_idx = 0;
+             secondary_bucket_idx < SECONDARY_FANOUT; ++secondary_bucket_idx) {
+          auto secondary_bucket_sz =
+              secondary_bucket_sizes[secondary_bucket_idx];
+          auto secondary_bucket_start_off = num_elms_finalized;
+          auto secondary_bucket_end_off =
+              secondary_bucket_start_off + secondary_bucket_sz;
+
+          // Skip bucket if empty
+          if (secondary_bucket_sz == 0) continue;
+
+          // Check for homogeneity
+          bool is_homogeneous = true;
+          if (rmi.enable_dups_detection) {
+            for (long elm_idx = secondary_bucket_start_off + 1;
+                 elm_idx < secondary_bucket_end_off; ++elm_idx) {
+              if (begin[elm_idx] != begin[elm_idx - 1]) {
+                is_homogeneous = false;
+                break;
+              }
+            }
+          }
+
+          if (!(rmi.enable_dups_detection and is_homogeneous)) {
+            long adjustment_offset =
+                1. *
+                (primary_bucket_idx * SECONDARY_FANOUT + secondary_bucket_idx) *
+                input_sz / (PRIMARY_FANOUT * SECONDARY_FANOUT);
+
+            // Saves the predicted CDFs for the Counting Sort subroutine
+            vector<long> pred_cache_cs(secondary_bucket_sz);
+
+            // Count array for the model-enhanced counting sort subroutine
+            vector<long> cnt_hist(secondary_bucket_sz, 0);
+
+            /*
+             * OPTIMIZATION
+             * We check to see if the first and last element in the current
+             * bucket used the same leaf model to obtain their CDF. If that is
+             * the case, then we don't need to traverse the CDF model for
+             * every element in this bucket, hence decreasing the inference
+             * complexity from O(num_layer) to O(1).
+             */
+
+            long pred_model_first_elm = static_cast<long>(std::max(
+                0., std::min(num_leaf_models - 1.,
+                             root_slope * begin[secondary_bucket_start_off] +
+                                 root_intercept)));
+
+            long pred_model_last_elm = static_cast<long>(std::max(
+                0., std::min(num_leaf_models - 1.,
+                             root_slope * begin[secondary_bucket_end_off - 1] +
+                                 root_intercept)));
+
+            if (pred_model_first_elm == pred_model_last_elm) {
+              // Avoid CDF model traversal and predict the CDF only using the
+              // leaf model
+
+              // Iterate over the elements and place them into the secondary
+              // buckets
+              for (long elm_idx = 0; elm_idx < secondary_bucket_sz; ++elm_idx) {
+                // Find the current element
+                auto cur_key = begin[secondary_bucket_start_off + elm_idx];
+
+                // Predict the CDF
+                double pred_cdf = slopes[pred_model_first_elm] * cur_key +
+                                  intercepts[pred_model_first_elm];
+
+                // Scale the predicted CDF to the input size and save it
+                pred_cache_cs[elm_idx] = static_cast<long>(std::max(
+                    0., std::min(secondary_bucket_sz - 1.,
+                                 (pred_cdf * input_sz) - adjustment_offset)));
+
+                // Update the counts
+                ++cnt_hist[pred_cache_cs[elm_idx]];
+              }
+            } else {
+              // Fully traverse the CDF model again to predict the CDF of the
+              // current element
+
+              // Iterate over the elements and place them into the minor
+              // buckets
+              for (long elm_idx = 0; elm_idx < secondary_bucket_sz; ++elm_idx) {
+                // Find the current element
+                auto cur_key = begin[secondary_bucket_start_off + elm_idx];
+
+                // Predict the model idx in the leaf layer
+                auto model_idx_next_layer = static_cast<long>(std::max(
+                    0., std::min(num_leaf_models - 1.,
+                                 root_slope * cur_key + root_intercept)));
+                // Predict the CDF
+                double pred_cdf = slopes[model_idx_next_layer] * cur_key +
+                                  intercepts[model_idx_next_layer];
+
+                // Scale the predicted CDF to the input size and save it
+                pred_cache_cs[elm_idx] = static_cast<long>(std::max(
+                    0., std::min(secondary_bucket_sz - 1.,
+                                 (pred_cdf * input_sz) - adjustment_offset)));
+
+                // Update the counts
+                ++cnt_hist[pred_cache_cs[elm_idx]];
+              }
+            }
+
+            --cnt_hist[0];
+
+            // Calculate the running totals
+            for (long i = 1; i < secondary_bucket_sz; ++i) {
+              cnt_hist[i] += cnt_hist[i - 1];
+            }
+
+            // Allocate a temporary buffer for placing the keys in sorted
+            // order
+            vector<T> tmp(secondary_bucket_sz);
+
+            // Re-shuffle the elms based on the calculated cumulative counts
+            for (long elm_idx = 0; elm_idx < secondary_bucket_sz; ++elm_idx) {
+              // Place the element in the predicted position in the array
+
+              tmp[cnt_hist[pred_cache_cs[elm_idx]]] =
+                  begin[secondary_bucket_start_off + elm_idx];
+
+              // Update counts
+              --cnt_hist[pred_cache_cs[elm_idx]];
+            }
+
+            // Write back the temprorary buffer to the original input
+            std::copy(tmp.begin(), tmp.end(),
+                      begin + secondary_bucket_start_off);
+          }
+          // Update the number of finalized elements
+          num_elms_finalized += secondary_bucket_sz;
+        }  // end of iteration over the secondary buckets
+
+      }  // end of processing for non-flagged, non-homogeneous primary buckets
+    }    // end of iteration over primary buckets
   }
 
-  // The input array is now sorted
+  // Touch up
+  learned_sort::utils::insertion_sort(begin, end);
 }
 
 /**
@@ -894,19 +969,19 @@ void _sort_trained(
  * Sort, in ascending order.
  *
  * @tparam RandomIt A bi-directional random iterator over the sequence of keys
- * @param begin Random-access iterators to the initial position of the sequence
- * to be used for sorting. The range used is [begin,end), which contains all the
- * elements between first and last, including the element pointed by first but
- * not the element pointed by last.
- * @param end Random-access iterators to the last position of the sequence to be
- * used for sorting. The range used is [begin,end), which contains all the
+ * @param begin Random-access iterators to the initial position of the
+ * sequence to be used for sorting. The range used is [begin,end), which
+ * contains all the elements between first and last, including the element
+ * pointed by first but not the element pointed by last.
+ * @param end Random-access iterators to the last position of the sequence to
+ * be used for sorting. The range used is [begin,end), which contains all the
  * elements between first and last, including the element pointed by first but
  * not the element pointed by last.
  * @param params The hyperparameters for the CDF model, which describe the
  * architecture and sampling ratio.
  */
 template <class RandomIt>
-void learned_sort::sort(
+void sort(
     RandomIt begin, RandomIt end,
     typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
         &params) {
@@ -931,20 +1006,23 @@ void learned_sort::sort(
     }
   }
 
-  // Use std::sort for very small arrays
   if (std::distance(begin, end) <=
-      std::max(params.fanout * params.threshold, 5 * params.arch[1])) {
+      std::max<long>(params.fanout * params.threshold,
+                     5 * params.num_leaf_models)) {
     std::sort(begin, end);
   } else {
-    // Train
-    auto rmi = train(begin, end, params);
+    // Initialize the RMI
+    TwoLayerRMI<typename iterator_traits<RandomIt>::value_type> rmi(params);
 
-    // Sort
-    if (rmi.trained)
-      _sort_trained(begin, end, rmi);
+    // Check if the model can be trained
+    if (rmi.train(begin, end)) {
+      // Sort the data if the model was successfully trained
+      learned_sort::sort(begin, end, rmi);
+    }
 
-    else  // Fall back in case the model could not be trained
+    else {  // Fall back in case the model could not be trained
       std::sort(begin, end);
+    }
   }
 }
 
@@ -953,17 +1031,17 @@ void learned_sort::sort(
  * Sort, in ascending order.
  *
  * @tparam RandomIt A bi-directional random iterator over the sequence of keys
- * @param begin Random-access iterators to the initial position of the sequence
- * to be used for sorting. The range used is [begin,end), which contains all the
- * elements between first and last, including the element pointed by first but
- * not the element pointed by last.
- * @param end Random-access iterators to the last position of the sequence to be
- * used for sorting. The range used is [begin,end), which contains all the
+ * @param begin Random-access iterators to the initial position of the
+ * sequence to be used for sorting. The range used is [begin,end), which
+ * contains all the elements between first and last, including the element
+ * pointed by first but not the element pointed by last.
+ * @param end Random-access iterators to the last position of the sequence to
+ * be used for sorting. The range used is [begin,end), which contains all the
  * elements between first and last, including the element pointed by first but
  * not the element pointed by last.
  */
 template <class RandomIt>
-void learned_sort::sort(RandomIt begin, RandomIt end) {
+void sort(RandomIt begin, RandomIt end) {
   if (begin != end) {
     typename TwoLayerRMI<typename iterator_traits<RandomIt>::value_type>::Params
         p;
@@ -971,4 +1049,4 @@ void learned_sort::sort(RandomIt begin, RandomIt end) {
   }
 }
 
-#endif  // LEARNED_SORT_H
+}  // namespace learned_sort

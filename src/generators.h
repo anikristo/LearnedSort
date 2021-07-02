@@ -1,5 +1,4 @@
-#ifndef GENERATORS_H
-#define GENERATORS_H
+#pragma once
 
 /**
  * @file generators.h
@@ -28,14 +27,8 @@
 using namespace std;
 
 template <class T>
-vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
-  // Adjust the default scale parameter w.r.t. the numerical type
-  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
-    scale = size;
-  else if (scale <= 0)
-    scale = 1;
-
-  // Initialize random engine
+vector<T> exponential_distr(size_t size, double lambda = 2) {
+  // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
   exponential_distribution<> distribution(lambda);
@@ -43,7 +36,7 @@ vector<T> exponential_distr(size_t size, double lambda = 2, double scale = 0) {
   // Populate the input
   vector<T> arr(size);
   for (size_t i = 0; i < size; i++) {
-    arr[i] = distribution(generator) * scale;
+    arr[i] = distribution(generator);
   }
 
   return arr;
@@ -58,7 +51,7 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 0.5,
   else if (scale <= 0)
     scale = 1;
 
-  // Initialize random engine
+  // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
   lognormal_distribution<> distribution(mean, stddev);
@@ -73,15 +66,19 @@ vector<T> lognormal_distr(size_t size, double mean = 0, double stddev = 0.5,
 }
 
 template <class T>
-vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1,
-                       double scale = 0) {
-  // Adjust the default scale parameter w.r.t. the numerical type
-  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
-    scale = size;
-  else if (scale <= 0)
-    scale = 1;
+vector<T> modulo_distr(size_t size, size_t mod = 16) {
+  // Populate the input
+  vector<T> arr(size);
+  for (size_t i = 0; i < size; i++) {
+    arr[i] = i % mod;
+  }
 
-  // Initialize random engine
+  return arr;
+}
+
+template <class T>
+vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1) {
+  // Initialize random engine with normal distribution
   random_device rd;
   mt19937 generator(rd());
   normal_distribution<> distribution(mean, stddev);
@@ -89,7 +86,7 @@ vector<T> normal_distr(size_t size, double mean = 0, double stddev = 1,
   // Populate the input
   vector<T> arr(size);
   for (size_t i = 0; i < size; i++) {
-    arr[i] = distribution(generator) * scale;
+    arr[i] = distribution(generator);
   }
   return arr;
 }
@@ -119,13 +116,13 @@ vector<T> uniform_distr(size_t size, double a = 0, double b = -1) {
 template <class T>
 vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
   // Generate the means
-  vector means = uniform_distr<double>(num_gauss, -5000, 5000);
+  vector<double> means = uniform_distr<double>(num_gauss, -500, 500);
 
   // Generate the stdevs
-  vector stdevs = uniform_distr<double>(num_gauss, 0, 1e6);
+  vector<double> stdevs = uniform_distr<double>(num_gauss, 0, 100);
 
   // Generate the weights
-  vector weights = uniform_distr<double>(num_gauss, 0, 1);
+  vector<double> weights = uniform_distr<double>(num_gauss, 0, 1);
 
   // Normalize the weights
   double sum_of_weights = std::accumulate(weights.begin(), weights.end(), 0.);
@@ -153,13 +150,7 @@ vector<T> mix_of_gauss_distr(size_t size, size_t num_gauss = 5) {
 }
 
 template <class T>
-vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 0) {
-  // Adjust the default scale parameter w.r.t. the numerical type
-  if (!(is_same<float, T>() || is_same<double, T>()) && scale <= 0)
-    scale = size;
-  else if (scale <= 0)
-    scale = 1;
-
+vector<T> chi_squared_distr(size_t size, double k = 4) {
   // Initialize random number generator
   random_device rd;
   mt19937 generator(rd());
@@ -168,14 +159,20 @@ vector<T> chi_squared_distr(size_t size, double k = 4, double scale = 0) {
   // Populate the input
   vector<T> arr(size);
   for (size_t i = 0; i < size; ++i) {
-    arr[i] = distribution(generator) * scale;
+    arr[i] = distribution(generator);
   }
 
   return arr;
 }
 
-// Adapted from
-// https://stackoverflow.com/questions/9983239/how-to-generate-zipf-distributed-numbers-efficiently
+/**
+ *
+ * Adapted from
+ * https://stackoverflow.com/questions/9983239/how-to-generate-zipf-distributed-numbers-efficiently
+ *
+ * NOTE: This generator is relatively slow, and the generation cannot be
+ * parallelized due to static variables.
+ */
 template <class T>
 vector<T> zipf_distr(size_t size, double skew = 0.75,
                      size_t cardinality = 1e8) {
@@ -210,7 +207,7 @@ vector<T> zipf_distr(size_t size, double skew = 0.75,
 
     // Map z to the value
     size_t low = 1, high = cardinality, mid;
-    T zipf_value;  // Computed exponential value to be returned
+    T zipf_value = 0;  // Computed exponential value to be returned
     do {
       mid = floor((low + high) / 2);
 
@@ -229,6 +226,9 @@ vector<T> zipf_distr(size_t size, double skew = 0.75,
   return arr;
 }
 
+/**
+ * A[i] = i mod sqrt(N)
+ */
 template <class T>
 vector<T> root_dups_distr(size_t size) {
   // Populate the input
@@ -239,6 +239,64 @@ vector<T> root_dups_distr(size_t size) {
     arr[i] = i % root;
   }
 
+  return arr;
+}
+
+/**
+ * Adapted from:
+ * https://github.com/ips4o/ips4o-benchmark-suite/blob/4d11b0311833f59a31858314b5927101f6077389/src/generator/generator.hpp#L449
+ *
+ * A[i] = i^2 + N/2 mod N
+ */
+template <class T>
+vector<T> two_dups_distr(size_t size) {
+  // Find the largest power of 2 that is less than size
+  unsigned long largest_power_of_two = 1;
+  while (2 * largest_power_of_two <= size) {
+    largest_power_of_two *= 2;
+  }
+
+  // Limit maximum size of values for 32-bit keys
+  if constexpr (std::is_same_v<T, unsigned>) {
+    unsigned max = std::numeric_limits<T>::max();
+    largest_power_of_two = std::min<unsigned long>(largest_power_of_two, max);
+  }
+
+  // Populate the input
+  vector<T> arr(size);
+  for (size_t i = 0; i < size; ++i) {
+    arr[i] = static_cast<T>((i * i + largest_power_of_two / 2) %
+                            largest_power_of_two);
+  }
+  return arr;
+}
+
+/**
+ * Adapted from:
+ * https://github.com/ips4o/ips4o-benchmark-suite/blob/4d11b0311833f59a31858314b5927101f6077389/src/generator/generator.hpp#L488
+ *
+ * A[i] = i^8 + N/2 mod N
+ */
+template <class T>
+vector<T> eight_dups_distr(size_t size) {
+  // Find the largest power of two
+  unsigned long largest_power_of_two = 1;
+  while (2 * largest_power_of_two <= size) {
+    largest_power_of_two *= 2;
+  }
+
+  if (std::is_same<T, unsigned>())
+    largest_power_of_two = std::min<unsigned long>(
+        largest_power_of_two, std::numeric_limits<T>::max());
+
+  // Populate the input
+  vector<T> arr(size);
+  for (size_t i = 0; i < size; ++i) {
+    unsigned long temp = (i * i) % largest_power_of_two;
+    temp = (temp * temp) % largest_power_of_two;
+    arr[i] = static_cast<T>((temp * temp + largest_power_of_two / 2) %
+                            largest_power_of_two);
+  }
   return arr;
 }
 
@@ -267,5 +325,3 @@ template <class T>
 vector<T> identical_distr(size_t size, T value = 0) {
   return vector<T>(size, value);
 }
-
-#endif  // GENERATORS_H

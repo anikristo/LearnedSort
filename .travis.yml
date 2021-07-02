@@ -6,8 +6,6 @@ language:
   - cpp
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
       - cmake
 jobs:
@@ -15,9 +13,9 @@ jobs:
     - os: linux
       dist: focal
       compiler: gcc
-    - os: linux
-      dist: focal
-      compiler: clang
+    # - os: linux
+    #   dist: focal
+    #   compiler: clang
 script:
   
   # Check version of cmake
@@ -27,7 +25,7 @@ script:
   - ./compile.sh
 
   # Run the test command
-  - ${TRAVIS_BUILD_DIR}/third_party/gtest-parallel/gtest-parallel ${TRAVIS_BUILD_DIR}/build/bin/LearnedSort_tests --repeat=5 --workers=5
+  - ./test.sh
 
 notifications:  
   email:  
