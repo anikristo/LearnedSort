@@ -28,14 +28,12 @@ class TwoLayerRMI {
   struct Params {
     // Member fields
     long fanout;
-    float overallocation_ratio;
     float sampling_rate;
     long threshold;
     long num_leaf_models;
 
     // Default hyperparameters
     static constexpr long DEFAULT_FANOUT = 1e3;
-    static constexpr float DEFAULT_OVERALLOCATION_RATIO = 1.1;
     static constexpr float DEFAULT_SAMPLING_RATE = .01;
     static constexpr long DEFAULT_THRESHOLD = 100;
     static constexpr long DEFAULT_NUM_LEAF_MODELS = 1000;
@@ -44,7 +42,6 @@ class TwoLayerRMI {
     // Default constructor
     Params() {
       this->fanout = DEFAULT_FANOUT;
-      this->overallocation_ratio = DEFAULT_OVERALLOCATION_RATIO;
       this->sampling_rate = DEFAULT_SAMPLING_RATE;
       this->threshold = DEFAULT_THRESHOLD;
       this->num_leaf_models = DEFAULT_NUM_LEAF_MODELS;
@@ -54,7 +51,6 @@ class TwoLayerRMI {
     Params(float sampling_rate, float overallocation, long fanout,
            long batch_sz, long threshold) {
       this->fanout = fanout;
-      this->overallocation_ratio = overallocation;
       this->sampling_rate = sampling_rate;
       this->threshold = threshold;
       this->num_leaf_models = DEFAULT_NUM_LEAF_MODELS;
@@ -111,15 +107,6 @@ class TwoLayerRMI {
       this->hp.fanout = TwoLayerRMI<T>::Params::DEFAULT_FANOUT;
       cerr << "\33[93;1mWARNING\33[0m: Invalid fanout. Using default ("
            << TwoLayerRMI<T>::Params::DEFAULT_FANOUT << ")." << endl;
-    }
-
-    if (this->hp.overallocation_ratio <= 1) {
-      this->hp.overallocation_ratio =
-          TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO;
-      cerr << "\33[93;1mWARNING\33[0m: Invalid overallocation ratio. Using "
-              "default ("
-           << TwoLayerRMI<T>::Params::DEFAULT_OVERALLOCATION_RATIO << ")."
-           << endl;
     }
 
     if (this->hp.sampling_rate <= 0 or this->hp.sampling_rate > 1) {
