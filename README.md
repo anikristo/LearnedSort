@@ -1,4 +1,5 @@
 # LearnedSort
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://travis-ci.com/learnedsystems/LearnedSort.svg?branch=master)](https://travis-ci.com/learnedsystems/learnedsort)
 ![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/learnedsystems/LearnedSort)
@@ -22,13 +23,14 @@ int main(int argc, char *argv[]) {
     learned_sort::sort(arr.begin(), arr.end());
 }
 ```
-<br>
+
 
 # Building Instructions
 
 ## LearnedSort library
+
 LearnedSort is distributed as part of a header-only library. 
-Therefore, in order the use it, __it is enough to include the header file in your code__.  
+Therefore, in order the use it, **it is enough to include the header file in your code**.  
 
 ```cpp
 #include "learned_sort.h"
@@ -38,15 +40,16 @@ However, besides the LearnedSort implementation, this repository contains benchm
 In order to execute those, follow the instructions below.
 
 ## Building the Benchmarks
+
 The code in this repository has only been tested on Linux systems, including RHEL 7 and Ubuntu 20.04. 
 In order to build the benchmarks, you will need the following dependencies:
 
-- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [CMake](https://cmake.org/install/)
-- [GCC](https://gcc.gnu.org)
-- [Python](https://www.python.org/downloads/)
-- [NumPy](https://numpy.org/install/)
-- [Matplotlib](https://matplotlib.org/stable/users/installing.html)
+-   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+-   [CMake](https://cmake.org/install/)
+-   [GCC](https://gcc.gnu.org)
+-   [Python](https://www.python.org/downloads/)
+-   [NumPy](https://numpy.org/install/)
+-   [Matplotlib](https://matplotlib.org/stable/users/installing.html)
 
 ```sh
 # Clone this repository
@@ -60,6 +63,7 @@ cd learned-sort
 ```
 
 ## Running the unit tests
+
 Before you run the benchmarks, we recommend that you run the unit tests first. 
 We use [Google Test](https://www.github.com/google/googletest) to perform unit testing on LearnedSort and other baseline sorting algorithms on various data distributions and data types.
 After downloading this repository, run the tests to make sure everything is working fine for your system setup. 
@@ -71,6 +75,7 @@ Should any of the tests fail, then GTest will display a summary of the errors th
 ```
 
 ## Running the synthetic benchmarks
+
 We use [Google Benchmark](https://www.github.com/google/benchmark) to measure the running times for LearnedSort and other sorting algorithm baselines for comparison.
 The benchmarks will be run for various input size, and with enough iterations to provide a stable statistic.
 The output will show the total running time (column "Time") and the time spent in the CPU (column "CPU") in milliseconds. 
@@ -84,6 +89,7 @@ If you wish to change the number of repetitions (e.g., to 10), you can add the o
 ```
 
 ### Customizing the synthetic benchmarks
+
 This script will use the default synthetic datasets, which is an array of 200M double-precision, normally-distributed keys. 
 You may customize the benchmarks by editing the top of the file `src/main_synth.cc`:
 
@@ -99,13 +105,12 @@ distr_t DATA_DISTR = NORMAL;
 constexpr size_t INPUT_SZ = 50'000'000;
 ```
 
-
 ## Running the real benchmarks
+
 For the real benchmarks, it is first required that the datasets from [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/learnedsort) are fetched to this repository's tree, since they are not checked in Git. 
 In order to do that, we provide a script that downloads the datasets, decompresses them, generates histograms of the data's distribution, and counts the number of unique keys in each dataset. 
 
 After the datasets have been successfully retrieved, you may run the real benchmarks. 
-
 
 ```sh
 # Download real datasets
@@ -116,6 +121,7 @@ After the datasets have been successfully retrieved, you may run the real benchm
 ```
 
 ### Customizing the real benchmarks
+
 The script uses the NYC/Pickup dataset by default, however, just like the synthetic benchmarks, you may customize the real benchmarks by editing the top of the file `src/main_real.cc`. 
 
 ```cpp
@@ -131,31 +137,38 @@ const string DATASET = "NYC/Pickup";
 For a list of possible values for the `DATASET` variable and their respective data types, please check out the `data/` folder. 
 
 # Benchmark results
+
 In the following sections we give concrete performance numbers for a particular server-grade computer. 
 
 For a detailed list of benchmarks, refer to our papers:
-* [The Case for a Learned Sorting Algorithm](https://dl.acm.org/doi/10.1145/3318464.3389752)
-* [Defeating duplicates: A re-design of the LearnedSort algorithm](TODO)
+
+-   [The Case for a Learned Sorting Algorithm](https://dl.acm.org/doi/10.1145/3318464.3389752)
+-   [Defeating duplicates: A re-design of the LearnedSort algorithm](TODO)
 
 ## Benchmark setup
-- __CPU__:  Intel&reg; Xeon&reg; Gold 6150 CPU @ 2.70GHz
-- __RAM__:  376GB
-- __OS__:   Linux Ubuntu 20.04, kernel 5.4.0-26-generic
-- __CXX__:  GCC 9.3.0-10ubuntu2
+
+-   **CPU**:  Intel® Xeon® Gold 6150 CPU @ 2.70GHz
+-   **RAM**:  376GB
+-   **OS**:   Linux Ubuntu 20.04, kernel 5.4.0-26-generic
+-   **CXX**:  GCC 9.3.0-10ubuntu2
 
 ## Performance charts
+
 The following chart displays the performance of LearnedSort and other sorting algorithms on a set of randomly generated input distributions containing 50M keys. The histograms in the vertical axis correspond to the shape of the distributions used for the benchmark.
 
 ![](./plots/perf_charts.png) 
 
 # Limitations
-- Currently it is not possible to sort records that contain payloads. We are in the works of adding support for tuples.
-- This implementation does not currently support string keys.
+
+-   Currently it is not possible to sort records that contain payloads. We are in the works of adding support for tuples.
+-   This implementation does not currently support string keys.
 
 ## Known bugs
+
 Refer to the [Issues](https://github.com/learnedsystems/LearnedSort/issues?q=is%3Aissue+is%3Aopen+label%3Abug) page for known bugs.
 
 # License & Credits
+
 This work is licensed under the [GNU General Public License v3.0](LICENSE) and any use in academic settings must cite the corresponding paper:
 
 ```bibtex
