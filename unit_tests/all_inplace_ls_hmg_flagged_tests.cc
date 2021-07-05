@@ -1,9 +1,7 @@
 /**
- * @file learned_sort_tests.cc
  * @author Ani Kristo (anikristo@gmail.com)
- * @brief Unit test files for Learned Sort
  *
- * @copyright Copyright (c) 2020 Ani Kristo (anikristo@gmail.com)
+ * @copyright Copyright (c) 2021 Ani Kristo (anikristo@gmail.com)
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3 of the License.
@@ -21,15 +19,15 @@
 #include <random>
 #include <vector>
 
+#include "../include/learned_sort.h"
 #include "../src/utils.h"
 #include "gtest/gtest.h"
-#include "learned_sort.h"
 
 using namespace std;
 
 extern size_t TEST_SIZE;
 
-TEST(LS_SORT_TEST, NormalDouble) {
+TEST(LEARNED_SORT_TEST, NormalDouble) {
   // Generate random input
   auto arr = normal_distr<double>(TEST_SIZE);
 
@@ -46,7 +44,7 @@ TEST(LS_SORT_TEST, NormalDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, NormalUnsigned) {
+TEST(LEARNED_SORT_TEST, NormalUnsigned) {
   // Generate random input
   auto arr = normal_distr<unsigned>(TEST_SIZE);
 
@@ -63,7 +61,7 @@ TEST(LS_SORT_TEST, NormalUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, NormalLong) {
+TEST(LEARNED_SORT_TEST, NormalLong) {
   // Generate random input
   auto arr = normal_distr<long>(TEST_SIZE);
 
@@ -80,8 +78,7 @@ TEST(LS_SORT_TEST, NormalLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-
-TEST(LS_SORT_TEST, LognormalDouble) {
+TEST(LEARNED_SORT_TEST, LognormalDouble) {
   // Generate random input
   auto arr = lognormal_distr<double>(TEST_SIZE);
 
@@ -98,7 +95,7 @@ TEST(LS_SORT_TEST, LognormalDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, LognormalUnsigned) {
+TEST(LEARNED_SORT_TEST, LognormalUnsigned) {
   // Generate random input
   auto arr = lognormal_distr<unsigned>(TEST_SIZE);
 
@@ -115,7 +112,7 @@ TEST(LS_SORT_TEST, LognormalUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, LognormalLong) {
+TEST(LEARNED_SORT_TEST, LognormalLong) {
   // Generate random input
   auto arr = lognormal_distr<long>(TEST_SIZE);
 
@@ -132,7 +129,7 @@ TEST(LS_SORT_TEST, LognormalLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, UniformReal) {
+TEST(LEARNED_SORT_TEST, UniformReal) {
   // Generate random input
   auto arr = uniform_distr<double>(TEST_SIZE);
 
@@ -149,7 +146,7 @@ TEST(LS_SORT_TEST, UniformReal) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, UniformUnsigned) {
+TEST(LEARNED_SORT_TEST, UniformUnsigned) {
   // Generate random input
   auto arr = uniform_distr<unsigned>(TEST_SIZE);
 
@@ -166,7 +163,7 @@ TEST(LS_SORT_TEST, UniformUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, UniformLong) {
+TEST(LEARNED_SORT_TEST, UniformLong) {
   // Generate random input
   auto arr = uniform_distr<long>(TEST_SIZE);
 
@@ -183,7 +180,7 @@ TEST(LS_SORT_TEST, UniformLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, RootDupsDouble) {
+TEST(LEARNED_SORT_TEST, RootDupsDouble) {
   // Generate random input
   auto arr = root_dups_distr<double>(TEST_SIZE);
 
@@ -200,7 +197,7 @@ TEST(LS_SORT_TEST, RootDupsDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, RootDupsUnsigned) {
+TEST(LEARNED_SORT_TEST, RootDupsUnsigned) {
   // Generate random input
   auto arr = root_dups_distr<unsigned>(TEST_SIZE);
 
@@ -217,7 +214,7 @@ TEST(LS_SORT_TEST, RootDupsUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, RootDupsLong) {
+TEST(LEARNED_SORT_TEST, RootDupsLong) {
   // Generate random input
   auto arr = root_dups_distr<long>(TEST_SIZE);
 
@@ -234,7 +231,7 @@ TEST(LS_SORT_TEST, RootDupsLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, SortedDouble) {
+TEST(LEARNED_SORT_TEST, SortedDouble) {
   // Generate random input
   auto arr = sorted_uniform_distr<double>(TEST_SIZE);
 
@@ -251,7 +248,7 @@ TEST(LS_SORT_TEST, SortedDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, SortedUnsigned) {
+TEST(LEARNED_SORT_TEST, SortedUnsigned) {
   // Generate random input
   auto arr = sorted_uniform_distr<unsigned>(TEST_SIZE);
 
@@ -268,7 +265,7 @@ TEST(LS_SORT_TEST, SortedUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, SortedLong) {
+TEST(LEARNED_SORT_TEST, SortedLong) {
   // Generate random input
   auto arr = sorted_uniform_distr<long>(TEST_SIZE);
 
@@ -285,7 +282,7 @@ TEST(LS_SORT_TEST, SortedLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, ReverseSorted) {
+TEST(LEARNED_SORT_TEST, ReverseSorted) {
   // Generate random input
   auto arr = reverse_sorted_uniform_distr<double>(TEST_SIZE);
 
@@ -305,7 +302,7 @@ TEST(LS_SORT_TEST, ReverseSorted) {
 /**
  * Test Case suggested by @Morwenn: https://github.com/Morwenn
  */
-TEST(LS_SORT_TEST, UniformMod16) {
+TEST(LEARNED_SORT_TEST, UniformMod16) {
   // Generate random array
   std::vector<int> arr;
   std::mt19937_64 prng(1604922353);
@@ -327,7 +324,7 @@ TEST(LS_SORT_TEST, UniformMod16) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, ZipfDouble) {
+TEST(LEARNED_SORT_TEST, ZipfDouble) {
   // Generate random input
   auto arr = zipf_distr<double>(TEST_SIZE);
 
@@ -344,7 +341,7 @@ TEST(LS_SORT_TEST, ZipfDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, ZipfUnsigned) {
+TEST(LEARNED_SORT_TEST, ZipfUnsigned) {
   // Generate random input
   auto arr = zipf_distr<unsigned>(TEST_SIZE);
 
@@ -361,7 +358,7 @@ TEST(LS_SORT_TEST, ZipfUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, ZipfLong) {
+TEST(LEARNED_SORT_TEST, ZipfLong) {
   // Generate random input
   auto arr = zipf_distr<long>(TEST_SIZE);
 
@@ -378,7 +375,7 @@ TEST(LS_SORT_TEST, ZipfLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, MixGaussDouble) {
+TEST(LEARNED_SORT_TEST, MixGaussDouble) {
   // Generate random input
   auto arr = mix_of_gauss_distr<double>(TEST_SIZE);
 
@@ -395,7 +392,7 @@ TEST(LS_SORT_TEST, MixGaussDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, MixGaussUnsigned) {
+TEST(LEARNED_SORT_TEST, MixGaussUnsigned) {
   // Generate random input
   auto arr = mix_of_gauss_distr<unsigned>(TEST_SIZE);
 
@@ -412,7 +409,7 @@ TEST(LS_SORT_TEST, MixGaussUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, MixGaussLong) {
+TEST(LEARNED_SORT_TEST, MixGaussLong) {
   // Generate random input
   auto arr = mix_of_gauss_distr<long>(TEST_SIZE);
 
@@ -429,9 +426,9 @@ TEST(LS_SORT_TEST, MixGaussLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, ChiSquaredDouble) {
+TEST(LEARNED_SORT_TEST, TwoDupsDouble) {
   // Generate random input
-  auto arr = chi_squared_distr<double>(TEST_SIZE);
+  auto arr = two_dups_distr<double>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
@@ -446,9 +443,9 @@ TEST(LS_SORT_TEST, ChiSquaredDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, ChiSquaredUnsigned) {
+TEST(LEARNED_SORT_TEST, TwoDupsdUnsigned) {
   // Generate random input
-  auto arr = chi_squared_distr<unsigned>(TEST_SIZE);
+  auto arr = two_dups_distr<unsigned>(TEST_SIZE);
 
   // Calculate the checksum
   auto cksm = get_checksum(arr);
@@ -463,7 +460,7 @@ TEST(LS_SORT_TEST, ChiSquaredUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, IdenticalLong) {
+TEST(LEARNED_SORT_TEST, IdenticalLong) {
   // Generate random input
   auto arr = identical_distr<long>(TEST_SIZE);
 
@@ -480,7 +477,7 @@ TEST(LS_SORT_TEST, IdenticalLong) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, IdenticalDouble) {
+TEST(LEARNED_SORT_TEST, IdenticalDouble) {
   // Generate random input
   auto arr = identical_distr<double>(TEST_SIZE);
 
@@ -497,7 +494,7 @@ TEST(LS_SORT_TEST, IdenticalDouble) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, IdenticalUnsigned) {
+TEST(LEARNED_SORT_TEST, IdenticalUnsigned) {
   // Generate random input
   auto arr = identical_distr<unsigned>(TEST_SIZE);
 
@@ -514,7 +511,7 @@ TEST(LS_SORT_TEST, IdenticalUnsigned) {
   ASSERT_TRUE(std::is_sorted(arr.begin(), arr.end()));
 }
 
-TEST(LS_SORT_TEST, ChiSquaredLong) {
+TEST(LEARNED_SORT_TEST, ChiSquaredLong) {
   // Generate random input
   auto arr = chi_squared_distr<long>(TEST_SIZE);
 

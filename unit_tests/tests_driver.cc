@@ -28,7 +28,7 @@ using namespace std;
  * @brief Global variable dictating the size of the tests (i.e., the number of
  * elements in the random arrays). Below is the default test size.
  */
-size_t TEST_SIZE = 12345678;
+size_t TEST_SIZE = 12'345'678;
 
 int main(int argc, char **argv) {
   // Parse command line arguments
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     auto cur_opt = std::string(argv[i]);
     transform(cur_opt.begin(), cur_opt.end(), cur_opt.begin(), ::tolower);
 
-    if (cur_opt.starts_with(TEST_SIZE_OPTION_NAME)) {
+    if (cur_opt.rfind(TEST_SIZE_OPTION_NAME, 0) == 0) {
       TEST_SIZE = stoi(cur_opt.substr(TEST_SIZE_OPTION_NAME.length() + 1));
     }
   }

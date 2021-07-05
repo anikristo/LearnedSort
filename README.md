@@ -1,20 +1,22 @@
-# Learned Sort
+# LearnedSort
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://travis-ci.com/learnedsystems/LearnedSort.svg?branch=master)](https://travis-ci.com/learnedsystems/learnedsort)
 ![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/learnedsystems/LearnedSort)
 ![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/learnedsystems/LearnedSort)
 
-The official repository for Learned Sort, a model-enhanced sorting algorithm that was published in [The Case for a Learned Sorting Algorithm](https://doi.org/10.1145/3318464.3389752).
+The official repository for LearnedSort, a model-enhanced sorting algorithm. 
 
-Example:
+The repository contains the sources for LearnedSort as well as benchmarking code for both synthetic and real datasets.
+
+Usage example:
 
 ```c++
 #include "learned_sort.h"
 
 int main(int argc, char *argv[]) {
   
-    // Generate some data
+    // Get some data
     vector<double> arr = {...}
 
     // Sort in ascending order
@@ -22,57 +24,32 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-To get started, see [Build instructions](#building-this-project) and [Testing instructions](#running-the-unit-tests).
 
----
+# Building Instructions
 
-## Table of Contents
+## LearnedSort library
 
-1. [Directory structure](#directory-structure)
-1. [Instructions](#instructions)
-    1. [Building this project](#building-this-project)
-    1. [Running the benchmarks](#running-the-benchmarks)
-    1. [Running the unit tests](#running-the-unit-tests)
-1. [Usage](#usage)
-    1. [Basic usage](#basic-usage)
-    1. [More features](#more-features)
-1. [Benchmark Results](#benchmark-results)
-    1. [Benchmark setup](#benchmark-setup)
-    1. [Performance charts](#performance-charts)
-    1. [Special input types](#special-input-types)
-1. [Limitations](#limitations)
-1. [License & credits](#license--credits)
-
----
-
-## Directory structure
-
-This repository is organized as follows:
-
-- The Learned Sort algorithm implementation in `include/learned_sort.h`
-- Benchmarking code in `benchmarks_driver.cc`
-- Unit testing code under `unit_tests/`
-- Dependencies under `third_party/`
-
-## Instructions
-
-Learned Sort is distributed as part of a header-only library. Therefore, in order the use it, __it is enough to include the header file in your code__.  
+LearnedSort is distributed as part of a header-only library. 
+Therefore, in order the use it, **it is enough to include the header file in your code**.  
 
 ```cpp
 #include "learned_sort.h"
 ```
 
-However, besides the Learned Sort implementation, this repository contains benchmarking and unit testing code. In order to execute those, follow the instructions below.
+However, besides the LearnedSort implementation, this repository contains benchmarking and unit testing code. 
+In order to execute those, follow the instructions below.
 
-### Building this project
+## Building the Benchmarks
 
-In order to build this project, you will need to have the following software installed in your system:
+The code in this repository has only been tested on Linux systems, including RHEL 7 and Ubuntu 20.04. 
+In order to build the benchmarks, you will need the following dependencies:
 
-- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [CMake](https://cmake.org/install/)
-- Compiler with support for C++20
-
-__NOTE__ This repository has only been tested on [GCC 9.3](https://gcc.gnu.org/releases.html) and [Clang 7.0.0](https://releases.llvm.org/7.0.0/tools/clang/docs/ReleaseNotes.html) on Linux Ubuntu Focal (20.04 LTS).
+-   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+-   [CMake](https://cmake.org/install/)
+-   [GCC](https://gcc.gnu.org)
+-   [Python](https://www.python.org/downloads/)
+-   [NumPy](https://numpy.org/install/)
+-   [Matplotlib](https://matplotlib.org/stable/users/installing.html)
 
 ```sh
 # Clone this repository
@@ -85,172 +62,112 @@ cd learned-sort
 ./compile.sh
 ```
 
-The build directory should now look like this:
+## Running the unit tests
 
-```text
-/learned-sort
-    /build
-        /bin
-            /LearnedSort_benchmarks
-            /LearnedSort_tests
-            /...
-    /...
-```
-
-### Running the benchmarks
-
-We use [Google Benchmark](https://www.github.com/google/benchmark) to measure the running times for Learned Sort and other sorting algorithm baselines for comparison.
-The benchmarks will be run for various input size, and with enough iterations to provide a stable statistic.
-The output will show the total running time (column "Time") and the time spent in the CPU (column "CPU") in milliseconds. 
-Each row displays the name of the algorithm that is being benchmarked, followed by the input size and statistic type. 
-The benchmark will repeat a few times (see `run.sh`) and it will report the mean, median, and standard deviation of the measurements.
-
-In order to execute the benchmarks:
+Before you run the benchmarks, we recommend that you run the unit tests first. 
+We use [Google Test](https://www.github.com/google/googletest) to perform unit testing on LearnedSort and other baseline sorting algorithms on various data distributions and data types.
+After downloading this repository, run the tests to make sure everything is working fine for your system setup. 
+Should any of the tests fail, then GTest will display a summary of the errors that occurred, otherwise no output is displayed.
 
 ```sh
-./run.sh
-```
-
-### Running the unit tests
-
-We use [Google Test](https://www.github.com/google/googletest) and [GTest-Parallel](https://github.com/google/gtest-parallel/tree/df0b4e476f98516cea7d593e5dbb0fca44f6ee7f) to perform unit testing on Learned Sort and other baseline sorting algorithms on various data distributions and data types.
-After downloading this repository, run the tests to make sure everything is working fine for your system setup.
-
-In order to execute the unit tests:
-
-```sh
+# Run all unit tests
 ./test.sh
 ```
 
-Should any of the tests fail, then GTest will display a summary of the errors that occurred, otherwise no output is displayed.
+## Running the synthetic benchmarks
 
-## Usage
+We use [Google Benchmark](https://www.github.com/google/benchmark) to measure the running times for LearnedSort and other sorting algorithm baselines for comparison.
+The benchmarks will be run for various input size, and with enough iterations to provide a stable statistic.
+The output will show the total running time (column "Time") and the time spent in the CPU (column "CPU") in milliseconds. 
+Each row displays the name of the algorithm that is being benchmarked, followed by the input size and statistic type. 
+The benchmark will repeat a few times and it will report the mean, median, and standard deviation of the measurements. 
+If you wish to change the number of repetitions (e.g., to 10), you can add the option `--benchmark_repetitions=<num_reps>` to the following command:
 
-### Basic Usage
-
-Generate or read some input data in a vector container and use `learned_sort::sort` as a drop-in replacement for `std::sort`.
-
-```cpp
-#include <iostream>
-#include <random>
-#include <vector>
-
-#include "learned_sort.h"
-
-int main(int argc, char *argv[])
-{
-    // Define some constants
-    static constexpr size_t INPUT_SIZE = 1e6;
-    static constexpr int MIN_KEY = 0;
-    static constexpr int MAX_KEY = 1;
-
-    // Generate some random uniformly distributed data
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::uniform_real_distribution<> distribution(MIN_KEY, MAX_KEY);
-
-    // Populate the input
-    std::vector<double> arr;
-    for (int i = 0; i < INPUT_SIZE; i++)
-    {
-        arr.push_back(distribution(g));
-    }
-
-    // Sort in ascending order
-    learned_sort::sort(arr.begin(), arr.end());
-
-    // Verify that the input is now sorted
-    if(std::is_sorted(arr.begin(), arr.end()))
-        std::cout << "Sorted!" << std::endl;
-}
+```sh
+# Run the synthetic benchmarks
+./synth_bench.sh
 ```
 
-### Function signatures
+### Customizing the synthetic benchmarks
 
-The Learned Sort library provides the following functions:
-
-```cpp
-
-// Sort in ascending order
-template <class RandomIt>
-void learned_sort::sort(RandomIt begin, RandomIt end);
-
-// Sort in ascending order using the specified RMI parameters
-template <class RandomIt>
-void learned_sort::sort(RandomIt begin, RandomIt end, learned_sort::RMI::Params &params);
-
-// Train an RMI using the given RMI parameters
-template <class RandomIt>
-learned_sort::RMI learned_sort::train(RandomIt begin, RandomIt end, learned_sort::RMI::Params &p);
-```
-
-### Training and sorting parameters
-
-In order to sort using a custom set of parameters, you can create an `RMI::Params` object as follows, and pass it to the sorting function:
+This script will use the default synthetic datasets, which is an array of 200M double-precision, normally-distributed keys. 
+You may customize the benchmarks by editing the top of the file `src/main_synth.cc`:
 
 ```cpp
-RMI::Params p; // Default parameters
+// NOTE: You may change the data type here
+typedef double data_t;
+
+// NOTE: You may change the distribution here
+// For a list of supported distributions see src/utils.h
+distr_t DATA_DISTR = NORMAL;
+
+// NOTE: You may change the input size here
+constexpr size_t INPUT_SZ = 50'000'000;
 ```
 
-or
+## Running the real benchmarks
+
+For the real benchmarks, it is first required that the datasets from [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/learnedsort) are fetched to this repository's tree, since they are not checked in Git. 
+In order to do that, we provide a script that downloads the datasets, decompresses them, generates histograms of the data's distribution, and counts the number of unique keys in each dataset. 
+
+After the datasets have been successfully retrieved, you may run the real benchmarks. 
+
+```sh
+# Download real datasets
+./download_real_datasets.sh
+
+# Run the real benchmarks
+./real_bench.sh
+```
+
+### Customizing the real benchmarks
+
+The script uses the NYC/Pickup dataset by default, however, just like the synthetic benchmarks, you may customize the real benchmarks by editing the top of the file `src/main_real.cc`. 
 
 ```cpp
-RMI::Params p(
-    sampling_rate,      // float, [0-1],    default .01
-    overallocation,     // float, >=1,      default 1.1
-    fanout,             // unsigned int,    default 1000
-    batch_size,         // unsigned int,    default 10
-    threshold,          // unsigned int,    default 100
-    model_architecture  // vector<unsigned int>, default {1, 1000} (Each number represents the number of linear models in the layer of the RMI)
-    );
+// NOTE: You may change the data type here
+typedef long data_t;
+
+// NOTE: You may change the dataset here
+// For a list of real datasets see the `data/` directory.
+// Make sure to specify the correct data type for the selected dataset.
+const string DATASET = "NYC/Pickup";
 ```
 
-### Benchmarking on different data distributions
+For a list of possible values for the `DATASET` variable and their respective data types, please check out the `data/` folder. 
 
-The default distribution of the input data for the benchmarks is set to a Normal distribution, however, we provide synthetic data generators for:
+# Benchmark results
 
-- Exponential distribution
-- Lognormal distribution
-- Normal distribution
-- Uniform distribution
-- Mixture of Gaussians distribution
-- Chi Squared distribution
-- Zipf distribution
-- RootDups distribution (see: [BlockQuicksort paper](https://arxiv.org/pdf/1604.06697.pdf) p.15)
+In the following sections we give concrete performance numbers for a particular server-grade computer. 
 
-## Benchmark results
+For a detailed list of benchmarks, refer to our papers:
 
-In the following sections we give concrete performance numbers for a particular server-grade computer.
+-   [The Case for a Learned Sorting Algorithm](https://dl.acm.org/doi/10.1145/3318464.3389752)
+-   [Defeating duplicates: A re-design of the LearnedSort algorithm](TODO)
 
-### Benchmark setup
+## Benchmark setup
 
-- __CPU__:  Intel&reg; Xeon&reg; Gold 6150 CPU @ 2.70GHz
-- __RAM__:  376GB
-- __OS__:   Linux Ubuntu 20.04, kernel 5.4.0-26-generic
-- __CXX__:  GCC 9.3.0-10ubuntu2
+-   **CPU**:  Intel® Xeon® Gold 6150 CPU @ 2.70GHz
+-   **RAM**:  376GB
+-   **OS**:   Linux Ubuntu 20.04, kernel 5.4.0-26-generic
+-   **CXX**:  GCC 9.3.0-10ubuntu2
 
-### Performance charts
-The following chart displays the performance of LearnedSort and other sorting algorithms on a set of randomly generated input distributions containing 10M keys. The histograms in the vertical axis correspond to the shape of the distributions used for the benchmark.
+## Performance charts
 
-![](./plots/charts_random.png) 
+The following chart displays the performance of LearnedSort and other sorting algorithms on a set of randomly generated input distributions containing 50M keys. The histograms in the vertical axis correspond to the shape of the distributions used for the benchmark.
 
-### Special input types
-In the cases when the input distribution contain a large number of duplicates (e.g. Zipf distribution), or when the input is in some special order, the performance of LearnedSort changes as follows. (10M keys)
+![](./plots/perf_charts.png) 
 
-![](./plots/charts_special.png) 
+# Limitations
 
+-   Currently it is not possible to sort records that contain payloads. We are in the works of adding support for tuples.
+-   This implementation does not currently support string keys.
 
-## Limitations
+## Known bugs
 
-- This implementation of Learned Sort is only compatible with 2-layer RMI models as they have resulted in the most optimal performance.
-- Currently it is not possible to sort records that contain payloads, i.e., the algorithm can only shuffle the keys in a sorted order. We are in the works of adding support for payloads.
-- This implementation only supports numerical keys, while strings and other complex types are currently unsupported.
-- This is the out-of-place variant of Learned Sort.
-
-### Known bugs
 Refer to the [Issues](https://github.com/learnedsystems/LearnedSort/issues?q=is%3Aissue+is%3Aopen+label%3Abug) page for known bugs.
 
-## License & Credits
+# License & Credits
 
 This work is licensed under the [GNU General Public License v3.0](LICENSE) and any use in academic settings must cite the corresponding paper:
 
@@ -271,7 +188,4 @@ keywords = {linear models, linear interpolation, learned algorithm, RMI, sorting
 location = {Portland, OR, USA},
 series = {SIGMOD '20}
 }
-  
-
-
 ```

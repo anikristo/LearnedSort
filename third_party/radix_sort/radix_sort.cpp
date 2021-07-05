@@ -1,37 +1,25 @@
 /*
- * @author: Andrew I. Schein, PhD
- *
- * Adapted from:
- * https://bitbucket.org/ais/usort/src/474cc2a19224/usort/f8_sort.c
- *
- *
- * IEEE format (float_32): [1 bit: Sign][ 8 bits: exponent][23 bits: fraction]
- * IEEE format (float_64): [1 bit: Sign][11 bits: exponent][52 bits: fraction]
- *
- * NOTE: Only works for little endian systems.
+ * Implementation file for radix_sort.h
  */
 
-#ifndef RADIXSORT_H
-#define RADIXSORT_H
-
-#include <string.h>
+#include "radix_sort.h"
 
 #include <algorithm>
-#include <vector>
 
 using namespace std;
 
 constexpr size_t HIST_SIZE = 2048;
-
 #define get_byte_0(v) ((v)&0x7FF)
 #define get_byte_1(v) (((v) >> 11) & 0x7FF)
 #define get_byte_2(v) (((v) >> 22) & 0x7FF)
 #define get_byte_3(v) (((v) >> 33) & 0x7FF)
 #define get_byte_4(v) (((v) >> 44) & 0x7FF)
 #define get_byte_5(v) (((v) >> 55) & 0x7FF)
+
 #define get_byte_2_flip_sign(v) (((unsigned)(v) >> 22) ^ 0x200)
 #define get_byte_5_flip_sign(v) ((((v) >> 55) & 0x7FF) ^ 0x400)
 
+// UTILS
 static inline uint32_t f4_sort_FloatFlip(uint32_t f) {
   uint32_t mask = -(f >> 31) | 0x80000000u;
   return (f ^ mask);
@@ -128,13 +116,13 @@ void radix_sort(vector<double>::iterator begin, vector<double>::iterator end) {
   char *is_little_endian = (char *)&i;
   if (*is_little_endian) {
     // Start Radix Sort
-    const size_t sz = std::distance(begin, end);
-    size_t j;
-    size_t pos;
-    size_t n, sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0,
+    const uint64_t sz = std::distance(begin, end);
+    uint64_t j;
+    uint64_t pos;
+    uint64_t n, sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0,
               tsum = 0;
     uint64_t *reader, *writer, *buf1 = (uint64_t *)&begin[0], *buf2;
-    size_t *b0, *b1, *b2, *b3, *b4, *b5;
+    uint64_t *b0, *b1, *b2, *b3, *b4, *b5;
 
     if (sz < HIST_SIZE) return std::sort(begin, end);
 
@@ -322,7 +310,7 @@ void radix_sort(vector<int64_t>::iterator begin,
     // Start Radix Sort
     int64_t *const begin_ptr = &*begin;
     const size_t sz = std::distance(begin, end);
-    int64_t j;
+    uint64_t j;
     size_t pos;
     size_t n, sum0 = 0, sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0,
               tsum = 0;
@@ -612,6 +600,8 @@ void radix_sort(vector<uint64_t>::iterator begin,
       writer[++b5[pos]] = reader[n];
     }
 
+    // memcpy(begin_ptr, buf, sz * sizeof(unsigned));
+
     free(buf);
     free(b0);
 
@@ -626,12 +616,6 @@ void radix_sort(vector<uint64_t>::iterator begin,
 #undef get_byte_3
 #undef get_byte_4
 #undef get_byte_5
+
 #undef get_byte_2_flip_sign
 #undef get_byte_2_flip_sign
-
-template <class RandomIt>
-void radix_sort(RandomIt begin, RandomIt end) {
-  cout << "Radix sort on this data type has not been implemented yet!" << endl;
-}
-
-#endif  // RADIX_SORT_HH
