@@ -143,7 +143,7 @@ In the following sections we give concrete performance numbers for a particular 
 For a detailed list of benchmarks, refer to our papers:
 
 -   [The Case for a Learned Sorting Algorithm](https://dl.acm.org/doi/10.1145/3318464.3389752)
--   [Defeating duplicates: A re-design of the LearnedSort algorithm](TODO)
+-   [Defeating duplicates: A re-design of the LearnedSort algorithm](https://arxiv.org/pdf/2107.03290.pdf)
 
 ## Benchmark setup
 
